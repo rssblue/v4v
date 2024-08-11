@@ -1,0 +1,8 @@
+[package]
+authors = ["RSS Blue", "Dovydas Joksas"]
+name = "v4v"
+version = "0.1.0"
+edition = "2021"
+
+[dev-dependencies]
+pretty_assertions = "1.4.0"
