@@ -1,68 +1,44 @@
-pub struct SplitRecipient {
-    pub split: u64,
-}
+pub fn compute_sat_recipients(splits: Vec<u64>, total_sats: u64) -> Vec<u64> {
+    let total_split: u64 = splits.iter().sum();
 
-impl From<u64> for SplitRecipient {
-    fn from(split: u64) -> Self {
-        SplitRecipient { split }
-    }
-}
-
-impl From<u32> for SplitRecipient {
-    fn from(split: u32) -> Self {
-        SplitRecipient {
-            split: split as u64,
-        }
-    }
-}
-
-impl From<u16> for SplitRecipient {
-    fn from(split: u16) -> Self {
-        SplitRecipient {
-            split: split as u64,
-        }
-    }
-}
-
-#[derive(Debug, PartialEq)]
-pub struct SatRecipient {
-    pub num_sats: u64,
-}
-
-pub fn compute_sat_recipients(
-    split_recipients: Vec<SplitRecipient>,
-    total_sats: u64,
-) -> Vec<SatRecipient> {
-    let total_split: u64 = split_recipients.iter().map(|r| r.split).sum();
-
-    let mut sat_recipients = Vec::new();
-    for split_recipient in split_recipients {
-        let num_sats = (split_recipient.split * total_sats) / total_split;
-        sat_recipients.push(SatRecipient { num_sats });
+    let mut sat_amounts = Vec::new();
+    for split in splits {
+        let num_sats = if total_split == 0 {
+            0
+        } else {
+            split * total_sats / total_split
+        };
+        sat_amounts.push(num_sats);
     }
 
-    let mut remaining_sats = total_sats - sat_recipients.iter().map(|r| r.num_sats).sum::<u64>();
+    let distributed_sats: u64 = sat_amounts.iter().sum();
+    let mut remaining_sats = total_sats - distributed_sats;
 
     // Distribute remaining sats by adding 1 sat to each recipient until we run out of sats.
-    // If a recipient already has at least one sat in the first iteration, skip them. But continue adding sats later.
-    let mut index = 0;
-    let mut first_iteration = true;
-
-    while remaining_sats > 0 {
-        if index >= sat_recipients.len() {
-            index = 0;
-            first_iteration = false;
+    // If a recipient already has at least one sat, skip them in this first iteration.
+    for sat in sat_amounts.iter_mut() {
+        if remaining_sats == 0 {
+            break;
         }
 
-        if !first_iteration || sat_recipients[index].num_sats == 0 {
-            sat_recipients[index].num_sats += 1;
+        if *sat == 0 {
+            *sat += 1;
             remaining_sats -= 1;
         }
+    }
+    // If we still have sats left, distribute them to all recipients.
+    if remaining_sats > 0 {
+        for sat in sat_amounts.iter_mut() {
+            if remaining_sats == 0 {
+                break;
+            }
 
-        index += 1;
+            *sat += 1;
+            remaining_sats -= 1;
+        }
     }
 
-    sat_recipients
+    sat_amounts
 }
 
 #[cfg(test)]
@@ -72,28 +48,37 @@ mod tests {
 
     #[test]
     fn test_compute_sat_recipients_simple() {
-        let split_recipients = vec![SplitRecipient { split: 50 }, SplitRecipient { split: 50 }];
+        let split_recipients = vec![50, 50];
 
         let sat_recipients = compute_sat_recipients(split_recipients, 1000);
 
-        assert_eq!(
-            sat_recipients,
-            vec![
-                SatRecipient { num_sats: 500 },
-                SatRecipient { num_sats: 500 },
-            ]
-        );
+        assert_eq!(sat_recipients, vec![500, 500,]);
     }
 
     #[test]
     fn test_compute_sat_recipients_insufficient() {
-        let split_recipients = vec![SplitRecipient { split: 50 }, SplitRecipient { split: 50 }];
+        let split_recipients = vec![50, 50];
 
         let sat_recipients = compute_sat_recipients(split_recipients, 1);
 
-        assert_eq!(
-            sat_recipients,
-            vec![SatRecipient { num_sats: 1 }, SatRecipient { num_sats: 0 },]
-        );
+        assert_eq!(sat_recipients, vec![1, 0],);
+    }
+
+    #[test]
+    fn test_compute_sat_recipients_insufficient_2() {
+        let split_recipients = vec![0, 0];
+
+        let sat_recipients = compute_sat_recipients(split_recipients, 1);
+
+        assert_eq!(sat_recipients, vec![1, 0],);
+    }
+
+    #[test]
+    fn test_compute_sat_recipients_insufficient_3() {
+        let split_recipients = vec![50, 50, 1];
+
+        let sat_recipients = compute_sat_recipients(split_recipients, 100);
+
+        assert_eq!(sat_recipients, vec![50, 49, 1],);
     }
 }
