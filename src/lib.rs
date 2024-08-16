@@ -155,11 +155,7 @@ pub fn fee_recipients_to_splits(
     for recipient in &recipients {
         match recipient {
             GenericRecipient::ShareBased { num_shares } => {
-                if total_shares == 0 {
-                    result.push(0);
-                } else {
-                    result.push(num_shares * remaining_percentage);
-                }
+                result.push(num_shares * remaining_percentage);
             }
             GenericRecipient::PercentageBased { percentage } => {
                 if share_recipients.is_empty() {
