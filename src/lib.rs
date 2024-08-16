@@ -2,6 +2,9 @@
 #![deny(missing_docs)]
 #![deny(rustdoc::broken_intra_doc_links)]
 
+mod svix_webhooks;
+pub use svix_webhooks::{HeaderMap, WebhookError};
+
 /// Distributes [satoshis (sats)](https://en.wikipedia.org/wiki/Bitcoin#Units_and_divisibility) to
 /// a list of recipients based on their splits.
 ///
@@ -173,4 +176,13 @@ pub fn fee_recipients_to_splits(
     result = result.into_iter().map(|x| x / gcd_value).collect();
 
     Ok(result)
+}
+
+/// Verifies Alby webhook requests.
+pub fn verify_alby_signature<HM: HeaderMap>(
+    secret: &str,
+    payload: &[u8],
+    headers: &HM,
+) -> Result<(), WebhookError> {
+    crate::svix_webhooks::Webhook::new(secret)?.verify(payload, headers)
 }
