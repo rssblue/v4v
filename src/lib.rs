@@ -150,22 +150,21 @@ pub fn fee_recipients_to_splits(
         })
         .sum();
 
-    let mut result = Vec::new();
+    let mut result = Vec::with_capacity(recipients.len());
 
-    if total_shares == 0 {
-        // All recipients are percentage-based
-        for recipient in &recipients {
-            if let GenericRecipient::PercentageBased { percentage } = recipient {
-                result.push(*percentage);
-            }
-        }
-    } else {
-        for recipient in &recipients {
-            match recipient {
-                GenericRecipient::ShareBased { num_shares } => {
-                    result.push(*num_shares * remaining_percentage);
+    for recipient in &recipients {
+        match recipient {
+            GenericRecipient::ShareBased { num_shares } => {
+                if total_shares == 0 {
+                    result.push(0);
+                } else {
+                    result.push(num_shares * remaining_percentage);
                 }
-                GenericRecipient::PercentageBased { percentage } => {
+            }
+            GenericRecipient::PercentageBased { percentage } => {
+                if share_recipients.is_empty() {
+                    result.push(*percentage);
+                } else {
                     result.push(*percentage * total_shares);
                 }
             }
@@ -178,7 +177,10 @@ pub fn fee_recipients_to_splits(
         .filter(|&&x| x != 0)
         .fold(0, |acc, &x| gcd(acc, x));
     if gcd_value > 1 {
-        result = result.into_iter().map(|x| x / gcd_value).collect();
+        result = result
+            .into_iter()
+            .map(|x| if x == 0 { 0 } else { x / gcd_value })
+            .collect();
     }
 
     Ok(result)

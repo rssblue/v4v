@@ -210,4 +210,11 @@ fee_recipients_to_splits_tests! {
         ],
         expected_splits: Ok(vec![99999, 1]),
     },
+    case_18: TestCase {
+        recipients: vec![
+            v4v::GenericRecipient::ShareBased { num_shares: 0 },
+            v4v::GenericRecipient::PercentageBased{ percentage: 0 },
+        ],
+        expected_splits: Ok(vec![0, 0]),
+    },
 }
