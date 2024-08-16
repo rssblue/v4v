@@ -60,8 +60,8 @@ macro_rules! fee_recipients_to_splits_tests {
                 #[test]
                 fn [<fee_recipients_to_splits_ $name>]() {
                     struct TestCase {
-                        recipients: Vec<v4v::FeeRecipient>,
-                        expected_splits: Result<Vec<u64>, v4v::FeeRecipientsToSplitsError>,
+                        recipients: Vec<v4v::GenericRecipient>,
+                        expected_splits: Result<Vec<u64>, v4v::RecipientsToSplitsError>,
                     }
                     assert_eq!(v4v::fee_recipients_to_splits($value.recipients), $value.expected_splits);
                 }
@@ -73,133 +73,133 @@ macro_rules! fee_recipients_to_splits_tests {
 fee_recipients_to_splits_tests! {
     case_1: TestCase {
         recipients: vec![
-            v4v::FeeRecipient { split: 50, fee: false },
-            v4v::FeeRecipient { split: 50, fee: false },
+            v4v::GenericRecipient::ShareBased { num_shares: 50 },
+            v4v::GenericRecipient::ShareBased { num_shares: 50 },
         ],
         expected_splits: Ok(vec![1, 1]),
     },
     case_2: TestCase {
         recipients: vec![
-            v4v::FeeRecipient { split: 50, fee: false },
-            v4v::FeeRecipient { split: 50, fee: false },
-            v4v::FeeRecipient { split: 2, fee: true },
+            v4v::GenericRecipient::ShareBased { num_shares: 50 },
+            v4v::GenericRecipient::ShareBased { num_shares: 50 },
+            v4v::GenericRecipient::PercentageBased { percentage: 2 },
         ],
         expected_splits: Ok(vec![49, 49, 2]),
     },
     case_3: TestCase {
         recipients: vec![
-            v4v::FeeRecipient { split: 50, fee: false },
-            v4v::FeeRecipient { split: 50, fee: false },
-            v4v::FeeRecipient { split: 1, fee: true },
+            v4v::GenericRecipient::ShareBased { num_shares: 50 },
+            v4v::GenericRecipient::ShareBased { num_shares: 50 },
+            v4v::GenericRecipient::PercentageBased { percentage: 1 },
         ],
         expected_splits: Ok(vec![99, 99, 2]),
     },
     case_4: TestCase {
         recipients: vec![
-            v4v::FeeRecipient { split: 50, fee: false },
-            v4v::FeeRecipient { split: 50, fee: false },
-            v4v::FeeRecipient { split: 1, fee: true },
-            v4v::FeeRecipient { split: 1, fee: true },
+            v4v::GenericRecipient::ShareBased { num_shares: 50 },
+            v4v::GenericRecipient::ShareBased { num_shares: 50 },
+            v4v::GenericRecipient::PercentageBased { percentage: 1 },
+            v4v::GenericRecipient::PercentageBased { percentage: 1 },
         ],
         expected_splits: Ok(vec![49, 49, 1, 1]),
     },
     case_5: TestCase {
         recipients: vec![
-            v4v::FeeRecipient { split: 1, fee: false },
-            v4v::FeeRecipient { split: 1, fee: false },
-            v4v::FeeRecipient { split: 2, fee: true },
+            v4v::GenericRecipient::ShareBased { num_shares: 1 },
+            v4v::GenericRecipient::ShareBased { num_shares: 1 },
+            v4v::GenericRecipient::PercentageBased { percentage: 2 },
         ],
         expected_splits: Ok(vec![49, 49, 2]),
     },
     case_6: TestCase {
         recipients: vec![
-            v4v::FeeRecipient { split: 100, fee: true },
+            v4v::GenericRecipient::PercentageBased { percentage: 100 },
         ],
         expected_splits: Ok(vec![1]),
     },
     case_7: TestCase {
         recipients: vec![
-            v4v::FeeRecipient { split: 2, fee: true },
-            v4v::FeeRecipient { split: 1, fee: true },
+            v4v::GenericRecipient::PercentageBased { percentage: 2 },
+            v4v::GenericRecipient::PercentageBased { percentage: 1 },
         ],
         expected_splits: Ok(vec![2, 1]),
     },
     case_8: TestCase {
         recipients: vec![
-            v4v::FeeRecipient { split: 10, fee: false },
-            v4v::FeeRecipient { split: 20, fee: false },
-            v4v::FeeRecipient { split: 30, fee: false },
-            v4v::FeeRecipient { split: 40, fee: false },
+            v4v::GenericRecipient::ShareBased { num_shares: 10 },
+            v4v::GenericRecipient::ShareBased { num_shares: 20 },
+            v4v::GenericRecipient::ShareBased { num_shares: 30 },
+            v4v::GenericRecipient::ShareBased { num_shares: 40 },
         ],
         expected_splits: Ok(vec![1, 2, 3, 4]),
     },
     case_9: TestCase {
         recipients: vec![
-            v4v::FeeRecipient { split: 10, fee: false },
-            v4v::FeeRecipient { split: 20, fee: false },
-            v4v::FeeRecipient { split: 30, fee: false },
-            v4v::FeeRecipient { split: 40, fee: false },
-            v4v::FeeRecipient { split: 1, fee: true },
+            v4v::GenericRecipient::ShareBased { num_shares: 10 },
+            v4v::GenericRecipient::ShareBased { num_shares: 20 },
+            v4v::GenericRecipient::ShareBased { num_shares: 30 },
+            v4v::GenericRecipient::ShareBased { num_shares: 40 },
+            v4v::GenericRecipient::PercentageBased { percentage: 1 },
         ],
         expected_splits: Ok(vec![99, 198, 297, 396, 10]),
     },
     case_10: TestCase {
         recipients: vec![
-            v4v::FeeRecipient { split: 10, fee: false },
-            v4v::FeeRecipient { split: 20, fee: false },
-            v4v::FeeRecipient { split: 30, fee: false },
-            v4v::FeeRecipient { split: 40, fee: false },
-            v4v::FeeRecipient { split: 1, fee: true },
-            v4v::FeeRecipient { split: 1, fee: true },
+            v4v::GenericRecipient::ShareBased { num_shares: 10 },
+            v4v::GenericRecipient::ShareBased { num_shares: 20 },
+            v4v::GenericRecipient::ShareBased { num_shares: 30 },
+            v4v::GenericRecipient::ShareBased { num_shares: 40 },
+            v4v::GenericRecipient::PercentageBased { percentage: 1 },
+            v4v::GenericRecipient::PercentageBased { percentage: 1 },
         ],
         expected_splits: Ok(vec![49, 98, 147, 196, 5, 5]),
     },
     // Change order:
     case_11: TestCase {
         recipients: vec![
-            v4v::FeeRecipient { split: 1, fee: true },
-            v4v::FeeRecipient { split: 10, fee: false },
-            v4v::FeeRecipient { split: 20, fee: false },
-            v4v::FeeRecipient { split: 30, fee: false },
-            v4v::FeeRecipient { split: 1, fee: true },
-            v4v::FeeRecipient { split: 40, fee: false },
+            v4v::GenericRecipient::PercentageBased { percentage: 1 },
+            v4v::GenericRecipient::ShareBased { num_shares: 10 },
+            v4v::GenericRecipient::ShareBased { num_shares: 20 },
+            v4v::GenericRecipient::ShareBased { num_shares: 30 },
+            v4v::GenericRecipient::PercentageBased { percentage: 1 },
+            v4v::GenericRecipient::ShareBased { num_shares: 40 },
         ],
         expected_splits: Ok(vec![5, 49, 98, 147, 5, 196]),
     },
     case_12: TestCase {
         recipients: vec![
-            v4v::FeeRecipient { split: 100, fee: true },
+            v4v::GenericRecipient::PercentageBased { percentage: 100 },
         ],
         expected_splits: Ok(vec![1]),
     },
     case_13: TestCase {
         recipients: vec![
-            v4v::FeeRecipient { split: 1, fee: true },
+            v4v::GenericRecipient::PercentageBased { percentage: 1 },
         ],
         expected_splits: Ok(vec![1]),
     },
     case_14: TestCase {
         recipients: vec![
-            v4v::FeeRecipient { split: 101, fee: true },
+            v4v::GenericRecipient::PercentageBased { percentage: 101 },
         ],
-        expected_splits: Err(v4v::FeeRecipientsToSplitsError::TotalFeeExceeds100),
+        expected_splits: Err(v4v::RecipientsToSplitsError::TotalFeeExceeds100),
     },
     case_15: TestCase {
         recipients: vec![
-            v4v::FeeRecipient { split: 100, fee: true },
-            v4v::FeeRecipient { split: 1, fee: false },
+            v4v::GenericRecipient::PercentageBased { percentage: 100 },
+            v4v::GenericRecipient::ShareBased { num_shares: 1 },
         ],
-        expected_splits: Err(v4v::FeeRecipientsToSplitsError::FeeIs100ButNonFeeRecipientsExist),
+        expected_splits: Err(v4v::RecipientsToSplitsError::FeeIs100ButNonFeeRecipientsExist),
     },
     case_16: TestCase {
         recipients: vec![
-            v4v::FeeRecipient { split: 50, fee: false },
-            v4v::FeeRecipient { split: 40, fee: false },
-            v4v::FeeRecipient { split: 3, fee: false },
-            v4v::FeeRecipient { split: 2, fee: false },
-            v4v::FeeRecipient { split: 2, fee: false },
-            v4v::FeeRecipient { split: 1, fee: false },
-            v4v::FeeRecipient { split: 2, fee: true },
+            v4v::GenericRecipient::ShareBased { num_shares: 50 },
+            v4v::GenericRecipient::ShareBased { num_shares: 40 },
+            v4v::GenericRecipient::ShareBased { num_shares: 3 },
+            v4v::GenericRecipient::ShareBased { num_shares: 2 },
+            v4v::GenericRecipient::ShareBased { num_shares: 2 },
+            v4v::GenericRecipient::ShareBased { num_shares: 1 },
+            v4v::GenericRecipient::PercentageBased { percentage: 2 },
         ],
         expected_splits: Ok(vec![50, 40, 3, 2, 2, 1, 2]),
     },
