@@ -116,15 +116,15 @@ impl std::fmt::Debug for RecipientsToSplitsError {
 
 /// Converts a list of [generic recipients](crate::GenericRecipient) into a list of share-like splits.
 ///
-/// Non-fee recipients maintain the same ratios.
+/// Share-based recipients maintain the same ratios.
 pub fn fee_recipients_to_splits(
     recipients: Vec<GenericRecipient>,
 ) -> Result<Vec<u64>, RecipientsToSplitsError> {
     let total_percentage: u64 = recipients
         .iter()
-        .map(|r| match r {
-            GenericRecipient::ShareBased { .. } => 0,
-            GenericRecipient::PercentageBased { percentage } => *percentage,
+        .filter_map(|r| match r {
+            GenericRecipient::PercentageBased { percentage } => Some(*percentage),
+            _ => None,
         })
         .sum();
 
@@ -134,10 +134,7 @@ pub fn fee_recipients_to_splits(
 
     let share_recipients: Vec<&GenericRecipient> = recipients
         .iter()
-        .filter(|r| match r {
-            GenericRecipient::ShareBased { .. } => true,
-            GenericRecipient::PercentageBased { .. } => false,
-        })
+        .filter(|r| matches!(r, GenericRecipient::ShareBased { .. }))
         .collect();
 
     if total_percentage == 100 && !share_recipients.is_empty() {
@@ -147,33 +144,42 @@ pub fn fee_recipients_to_splits(
     let remaining_percentage = 100 - total_percentage;
     let total_shares: u64 = share_recipients
         .iter()
-        .map(|r| match r {
-            GenericRecipient::ShareBased { num_shares } => *num_shares,
-            GenericRecipient::PercentageBased { .. } => 0,
+        .filter_map(|r| match r {
+            GenericRecipient::ShareBased { num_shares } => Some(*num_shares),
+            _ => None,
         })
         .sum();
 
     let mut result = Vec::new();
 
-    for recipient in &recipients {
-        match recipient {
-            GenericRecipient::ShareBased { num_shares } => {
-                if total_shares == 0 {
-                    result.push(0);
-                } else {
-                    result.push(*num_shares * remaining_percentage * 100 / total_shares);
-                }
+    if total_shares == 0 {
+        // All recipients are percentage-based
+        for recipient in &recipients {
+            if let GenericRecipient::PercentageBased { percentage } = recipient {
+                result.push(*percentage);
             }
-            GenericRecipient::PercentageBased { percentage } => {
-                result.push(*percentage * 100);
+        }
+    } else {
+        for recipient in &recipients {
+            match recipient {
+                GenericRecipient::ShareBased { num_shares } => {
+                    result.push(*num_shares * remaining_percentage);
+                }
+                GenericRecipient::PercentageBased { percentage } => {
+                    result.push(*percentage * total_shares);
+                }
             }
         }
     }
 
-    // Normalize the results
-    let gcd_value = result.iter().fold(0, |acc, &x| gcd(acc, x));
-
-    result = result.into_iter().map(|x| x / gcd_value).collect();
+    // Find the GCD of all non-zero values to normalize the results
+    let gcd_value = result
+        .iter()
+        .filter(|&&x| x != 0)
+        .fold(0, |acc, &x| gcd(acc, x));
+    if gcd_value > 1 {
+        result = result.into_iter().map(|x| x / gcd_value).collect();
+    }
 
     Ok(result)
 }
