@@ -3,6 +3,9 @@ authors = ["RSS Blue", "Dovydas Joksas"]
 name = "v4v"
 version = "0.1.0"
 edition = "2021"
+description = "Value-for-value helper utilities for Podcasting 2.0"
+license = "MIT OR Apache-2.0"
+keywords = ["bitcoin", "podcast", "rss", "v4v"]
 
 [dev-dependencies]
 pretty_assertions = "1.4.0"
