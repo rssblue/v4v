@@ -290,11 +290,11 @@ pub fn use_remote_splits(
             .filter(|&&x| x != 0)
             .fold(0, |acc, &x| gcd(acc, x));
         let new_local_splits = local_splits
-            .into_iter()
+            .iter()
             .map(|x| if *x == 0 { 0 } else { x / gcd_value })
             .collect();
         let new_remote_splits = remote_splits
-            .into_iter()
+            .iter()
             .map(|x| if *x == 0 { 0 } else { x / gcd_value })
             .collect();
         return (new_local_splits, new_remote_splits);
