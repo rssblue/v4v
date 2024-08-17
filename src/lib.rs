@@ -13,6 +13,29 @@ pub use svix_webhooks::{HeaderMap, WebhookError};
 /// associated with the payment.
 ///
 /// If there aren't enough sats, the function will prioritize recipients with higher splits.
+///
+/// ## Example 1
+/// ```rust
+/// let splits = vec![60, 40];
+/// let total_sats = 1000;
+/// assert_eq!(v4v::compute_sat_recipients(splits, total_sats), vec![600, 400]);
+/// ```
+///
+/// ## Example 2
+/// ```rust
+/// let splits = vec![1, 99];
+/// let total_sats = 10;
+/// // It's ensured that the recipient with 1% split still gets at least 1 sat:
+/// assert_eq!(v4v::compute_sat_recipients(splits, total_sats), vec![1, 9]);
+/// ```
+///
+/// ## Example 3
+/// ```rust
+/// let splits = vec![1, 99];
+/// let total_sats = 1;
+/// // There is only 1 sat available to distribute, so the recipient with the larger split gets it:
+/// assert_eq!(v4v::compute_sat_recipients(splits, total_sats), vec![0, 1]);
+/// ```
 pub fn compute_sat_recipients(splits: Vec<u64>, total_sats: u64) -> Vec<u64> {
     let total_split: u64 = splits.iter().sum();
 
@@ -116,7 +139,20 @@ impl std::fmt::Debug for RecipientsToSplitsError {
 
 /// Converts a list of [generic recipients](crate::GenericRecipient) into a list of share-like splits.
 ///
-/// Share-based recipients maintain the same ratios.
+/// Share-based recipients maintain the same ratios between themselves after percentage-based
+/// recipients are included.
+///
+/// ## Example 1
+/// ```rust
+/// let recipients = vec![
+///     v4v::GenericRecipient::ShareBased { num_shares: 50 },
+///     v4v::GenericRecipient::ShareBased { num_shares: 50 },
+///     v4v::GenericRecipient::PercentageBased { percentage: 1 },
+/// ];
+/// // Share-based recipients still receive sats in the 50/50 ratio between them. But
+/// // overall, they get 49.5% each, and the percentage-based recipient gets the required 1%.
+/// // That's because 99/(99+99+2) = 49.5% and 2/(99+99+2) = 1%.
+/// assert_eq!(v4v::fee_recipients_to_splits(recipients), Ok(vec![99, 99, 2]));
 pub fn fee_recipients_to_splits(
     recipients: Vec<GenericRecipient>,
 ) -> Result<Vec<u64>, RecipientsToSplitsError> {
@@ -183,6 +219,43 @@ pub fn fee_recipients_to_splits(
 }
 
 /// Verifies Alby webhook requests.
+///
+/// ## Example Axum usage
+/// ```no_run
+/// use axum::{
+///     routing::post,
+///     Router,
+/// };
+///
+/// fn router() -> Router {
+///     Router::new()
+///         .route(
+///             "/alby-webhook",
+///             post(webhook_handler)
+///         )
+/// }
+///
+/// async fn webhook_handler(
+///     headers: http::header::HeaderMap,
+///     Json(body): Json<serde_json::Value>,
+/// ) -> StatusCode {
+///     match v4v::verify_alby_signature(&secret, body.to_string().as_bytes(), &headers) {
+///         Ok(()) => {}
+///         Err(e) => {
+///             log::error!("Failed to verify webhook: {:?}", e);
+///             return StatusCode::BAD_REQUEST;
+///         }
+///     };
+///
+///     match save_to_db(&body).await {
+///         Ok(_) => StatusCode::NO_CONTENT,
+///         Err(e) => {
+///             log::error!("Failed to record Alby payment: {}", e);
+///             StatusCode::INTERNAL_SERVER_ERROR
+///         }
+///     }
+/// }
+/// ```
 pub fn verify_alby_signature<HM: HeaderMap>(
     secret: &str,
     payload: &[u8],
