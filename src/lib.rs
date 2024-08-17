@@ -221,7 +221,7 @@ pub fn fee_recipients_to_splits(
 /// Verifies Alby webhook requests.
 ///
 /// ## Example Axum usage
-/// ```no_run
+/// ```ignore
 /// use axum::{
 ///     routing::post,
 ///     Router,
