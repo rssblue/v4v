@@ -81,6 +81,11 @@ pub fn compute_sat_recipients(splits: &[u64], total_sats: u64) -> Vec<u64> {
         }
     }
 
+    // Redundant check to make sure we are distributing the initial amount:
+    if sat_amounts.iter().sum::<u64>() != total_sats {
+        panic!("Distributed sats ({distributed_sats}) != total sats ({total_sats}) (splits = {splits:?}, sat_amounts = {sat_amounts:?})");
+    }
+
     sat_amounts
 }
 
