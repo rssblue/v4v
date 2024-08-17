@@ -89,6 +89,16 @@ pub fn compute_sat_recipients(splits: &[u64], total_sats: u64) -> Vec<u64> {
     sat_amounts
 }
 
+/// Similar to [compute_sat_recipients](crate::compute_sat_recipients) but allows to use it with
+/// any type that uses splits.
+pub fn compute_sat_recipients_generic<T: HasSplit + Clone>(
+    values: &[T],
+    total_sats: u64,
+) -> Vec<u64> {
+    let splits: Vec<u64> = values.iter().map(|v| v.get_split()).collect();
+    compute_sat_recipients(&splits, total_sats)
+}
+
 /// Represents a share- or percentage-based recipient.
 ///
 /// Percentage fees as part of the Podcasting 2.0 spec are
@@ -224,6 +234,26 @@ pub fn fee_recipients_to_splits(
     Ok(result)
 }
 
+/// Similar to [fee_recipients_to_splits](crate::fee_recipients_to_splits) but allows to use it
+/// with any type that uses splits and implements `Into<crate::GenericRecipient>`.
+pub fn fee_recipients_to_splits_generic<T: Into<GenericRecipient> + HasSplit + Clone>(
+    recipients: &[T],
+) -> Result<Vec<T>, RecipientsToSplitsError> {
+    let generic_recipients: Vec<GenericRecipient> =
+        recipients.iter().map(|r| (*r).clone().into()).collect();
+
+    let splits = fee_recipients_to_splits(&generic_recipients)?;
+
+    let mut result = Vec::with_capacity(recipients.len());
+    for (recipient, &split) in recipients.iter().zip(splits.iter()) {
+        let mut recipient = (*recipient).clone();
+        recipient.set_split(split);
+        result.push(recipient);
+    }
+
+    Ok(result)
+}
+
 /// Scales the splits such that `remote_splits` would constitute `remote_percentage` of the total,
 /// and `local_splits` would constitute the rest.
 ///
@@ -301,6 +331,41 @@ pub fn use_remote_splits(
         .collect();
 
     (final_local, final_remote)
+}
+
+/// Trait for types that have a split.
+pub trait HasSplit {
+    /// Set split.
+    fn set_split(&mut self, split: u64);
+    /// Get split.
+    fn get_split(&self) -> u64;
+}
+
+/// Similar to [use_remote_splits](crate::use_remote_splits) but allows to use it with any type
+/// that uses splits.
+pub fn use_remote_splits_generic<T: HasSplit + Clone>(
+    local_values: &[T],
+    remote_values: &[T],
+    remote_percentage: u64,
+) -> Vec<T> {
+    let local_splits: Vec<u64> = local_values.iter().map(|v| v.get_split()).collect();
+    let remote_splits: Vec<u64> = remote_values.iter().map(|v| v.get_split()).collect();
+    let (new_local_splits, new_remote_splits) =
+        use_remote_splits(&local_splits, &remote_splits, remote_percentage);
+
+    let mut result = Vec::with_capacity(local_values.len() + remote_values.len());
+    for (value, &split) in local_values.iter().zip(new_local_splits.iter()) {
+        let mut value = value.clone();
+        value.set_split(split);
+        result.push(value);
+    }
+    for (value, &split) in remote_values.iter().zip(new_remote_splits.iter()) {
+        let mut value = value.clone();
+        value.set_split(split);
+        result.push(value);
+    }
+
+    result
 }
 
 /// Verifies Alby webhook requests.

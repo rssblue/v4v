@@ -53,6 +53,50 @@ compute_sat_recipients_tests! {
     },
 }
 
+macro_rules! compute_sat_recipients_generic_tests {
+    ($($name:ident: $value:expr,)*) => {
+        paste::item! {
+            $(
+                #[test]
+                fn [<compute_sat_recipients_generic_ $name>]() {
+                    #[derive(Debug, PartialEq, Clone)]
+                    struct MyStruct {
+                        split: u64,
+                    }
+
+                    impl v4v::HasSplit for MyStruct {
+                        fn get_split(&self) -> u64 {
+                            self.split
+                        }
+
+                        fn set_split(&mut self, split: u64) {
+                            self.split = split;
+                        }
+                    }
+
+                    struct TestCase {
+                        recipients: Vec<MyStruct>,
+                        total_sats: u64,
+                        expected_sats: Vec<u64>,
+                    }
+                    assert_eq!(v4v::compute_sat_recipients_generic(&$value.recipients, $value.total_sats), $value.expected_sats);
+                }
+            )*
+        }
+    }
+}
+
+compute_sat_recipients_generic_tests! {
+    case_1: TestCase {
+        recipients: vec![
+            MyStruct { split: 50 },
+            MyStruct { split: 50 },
+        ],
+        total_sats: 1000,
+        expected_sats: vec![500, 500],
+    },
+}
+
 macro_rules! fee_recipients_to_splits_tests {
     ($($name:ident: $value:expr,)*) => {
         paste::item! {
@@ -219,6 +263,75 @@ fee_recipients_to_splits_tests! {
     },
 }
 
+macro_rules! fee_recipients_to_splits_generic_tests {
+    ($($name:ident: $value:expr,)*) => {
+        paste::item! {
+            $(
+                #[test]
+                fn [<fee_recipients_to_splits_generic_ $name>]() {
+                    #[derive(Debug, PartialEq, Clone)]
+                    struct MyStruct {
+                        split: u64,
+                        fee: bool,
+                    }
+
+                    impl v4v::HasSplit for MyStruct {
+                        fn get_split(&self) -> u64 {
+                            self.split
+                        }
+
+                        fn set_split(&mut self, split: u64) {
+                            self.split = split;
+                            self.fee = false;
+                        }
+                    }
+
+                    impl Into<v4v::GenericRecipient> for MyStruct {
+                        fn into(self) -> v4v::GenericRecipient {
+                            if self.fee {
+                                v4v::GenericRecipient::PercentageBased { percentage: self.split }
+                            } else {
+                                v4v::GenericRecipient::ShareBased { num_shares: self.split }
+                            }
+                        }
+                    }
+
+                    struct TestCase {
+                        recipients: Vec<MyStruct>,
+                        expected_recipients: Result<Vec<MyStruct>, v4v::RecipientsToSplitsError>,
+                    }
+                    assert_eq!(v4v::fee_recipients_to_splits_generic(&$value.recipients), $value.expected_recipients);
+                }
+            )*
+        }
+    }
+}
+
+fee_recipients_to_splits_generic_tests! {
+    case_1: TestCase {
+        recipients: vec![
+            MyStruct { split: 50, fee: false },
+            MyStruct { split: 50, fee: false },
+        ],
+        expected_recipients: Ok(vec![
+            MyStruct { split: 1, fee: false },
+            MyStruct { split: 1, fee: false },
+        ]),
+    },
+    case_2: TestCase {
+        recipients: vec![
+            MyStruct { split: 50, fee: false },
+            MyStruct { split: 50, fee: false },
+            MyStruct { split: 1, fee: true },
+        ],
+        expected_recipients: Ok(vec![
+            MyStruct { split: 99, fee: false },
+            MyStruct { split: 99, fee: false },
+            MyStruct { split: 2, fee: false },
+        ]),
+    },
+}
+
 macro_rules! use_remote_splits_tests {
     ($($name:ident: $value:expr,)*) => {
         paste::item! {
@@ -288,5 +401,47 @@ use_remote_splits_tests! {
         remote_percentage: 1000,
         expected_local_splits: vec![0, 0, 0],
         expected_remote_splits: vec![4, 5, 6],
+    },
+}
+
+macro_rules! use_remote_splits_generic_tests {
+    ($($name:ident: $value:expr,)*) => {
+        paste::item! {
+            $(
+                #[test]
+                fn [<use_remote_splits_generic_ $name>]() {
+                    #[derive(Debug, PartialEq, Clone)]
+                    struct MyStruct {
+                        split: u64,
+                    }
+                    impl v4v::HasSplit for MyStruct {
+                        fn get_split(&self) -> u64 {
+                            self.split
+                        }
+
+                        fn set_split(&mut self, split: u64) {
+                            self.split = split;
+                        }
+                    }
+
+                    struct TestCase {
+                        local_values: Vec<MyStruct>,
+                        remote_values: Vec<MyStruct>,
+                        remote_percentage: u64,
+                        expected_values: Vec<MyStruct>,
+                    }
+                    assert_eq!(v4v::use_remote_splits_generic(&$value.local_values, &$value.remote_values, $value.remote_percentage), $value.expected_values);
+                }
+            )*
+        }
+    }
+}
+
+use_remote_splits_generic_tests! {
+    case_1: TestCase {
+        local_values: vec![MyStruct { split: 100 }],
+        remote_values: vec![MyStruct { split: 50 }],
+        remote_percentage: 40,
+        expected_values: vec![MyStruct { split: 3 }, MyStruct { split: 2 }],
     },
 }
