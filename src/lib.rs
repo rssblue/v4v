@@ -223,8 +223,10 @@ pub fn fee_recipients_to_splits(
 /// ## Example Axum usage
 /// ```ignore
 /// use axum::{
+///     extract::Json,
 ///     routing::post,
 ///     Router,
+///     http::StatusCode,
 /// };
 ///
 /// fn router() -> Router {
