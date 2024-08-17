@@ -218,3 +218,75 @@ fee_recipients_to_splits_tests! {
         expected_splits: Ok(vec![0, 0]),
     },
 }
+
+macro_rules! use_remote_splits_tests {
+    ($($name:ident: $value:expr,)*) => {
+        paste::item! {
+            $(
+                #[test]
+                fn [<use_remote_splits_ $name>]() {
+                    struct TestCase {
+                        local_splits: Vec<u64>,
+                        remote_splits: Vec<u64>,
+                        remote_percentage: u64,
+                        expected_local_splits: Vec<u64>,
+                        expected_remote_splits: Vec<u64>,
+                    }
+                    assert_eq!(v4v::use_remote_splits(&$value.local_splits, &$value.remote_splits, $value.remote_percentage), ($value.expected_local_splits, $value.expected_remote_splits));
+                }
+            )*
+        }
+    }
+}
+
+use_remote_splits_tests! {
+    case_1: TestCase {
+        local_splits: vec![100],
+        remote_splits: vec![],
+        remote_percentage: 0,
+        expected_local_splits: vec![1],
+        expected_remote_splits: vec![],
+    },
+    case_2: TestCase {
+        local_splits: vec![],
+        remote_splits: vec![100],
+        remote_percentage: 0,
+        expected_local_splits: vec![],
+        expected_remote_splits: vec![1],
+    },
+    case_3: TestCase {
+        local_splits: vec![],
+        remote_splits: vec![],
+        remote_percentage: 0,
+        expected_local_splits: vec![],
+        expected_remote_splits: vec![],
+    },
+    case_4: TestCase {
+        local_splits: vec![1, 2, 3],
+        remote_splits: vec![4, 5, 6],
+        remote_percentage: 0,
+        expected_local_splits: vec![1, 2, 3],
+        expected_remote_splits: vec![0, 0, 0],
+    },
+    case_5: TestCase {
+        local_splits: vec![1, 2, 3],
+        remote_splits: vec![4, 5, 6],
+        remote_percentage: 100,
+        expected_local_splits: vec![0, 0, 0],
+        expected_remote_splits: vec![4, 5, 6],
+    },
+    case_6: TestCase {
+        local_splits: vec![1, 2, 3],
+        remote_splits: vec![4, 5, 6],
+        remote_percentage: 50,
+        expected_local_splits: vec![5, 10, 15],
+        expected_remote_splits: vec![8, 10, 12],
+    },
+    case_7: TestCase {
+        local_splits: vec![1, 2, 3],
+        remote_splits: vec![4, 5, 6],
+        remote_percentage: 1000,
+        expected_local_splits: vec![0, 0, 0],
+        expected_remote_splits: vec![4, 5, 6],
+    },
+}

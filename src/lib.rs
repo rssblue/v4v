@@ -224,6 +224,85 @@ pub fn fee_recipients_to_splits(
     Ok(result)
 }
 
+/// Scales the splits such that `remote_splits` would constitute `remote_percentage` of the total,
+/// and `local_splits` would constitute the rest.
+///
+/// ## Example
+/// ```rust
+/// let local_splits = vec![50, 50];
+/// let remote_splits = vec![1];
+/// let remote_percentage = 90;
+/// // The remote split is 18, because 18/(18+1+1) = 90%. The local splits are 1 and 1, because
+/// // 1/(18+1+1) = 5%.
+/// assert_eq!(v4v::use_remote_splits(&local_splits, &remote_splits, remote_percentage), (vec![1, 1], vec![18]));
+pub fn use_remote_splits(
+    local_splits: &[u64],
+    remote_splits: &[u64],
+    remote_percentage: u64,
+) -> (Vec<u64>, Vec<u64>) {
+    // Cap remote_percentage at 100
+    let remote_percentage = remote_percentage.min(100);
+    let local_percentage = 100 - remote_percentage;
+
+    // Calculate total splits
+    let total_local: u64 = local_splits.iter().sum();
+    let total_remote: u64 = remote_splits.iter().sum();
+
+    // If either total is 0, we need to handle this specially
+    if total_local == 0 || total_remote == 0 {
+        let all_values = local_splits
+            .iter()
+            .chain(remote_splits.iter())
+            .copied()
+            .collect::<Vec<_>>();
+        let gcd_value = all_values
+            .iter()
+            .filter(|&&x| x != 0)
+            .fold(0, |acc, &x| gcd(acc, x));
+        let new_local_splits = local_splits
+            .into_iter()
+            .map(|x| if *x == 0 { 0 } else { x / gcd_value })
+            .collect();
+        let new_remote_splits = remote_splits
+            .into_iter()
+            .map(|x| if *x == 0 { 0 } else { x / gcd_value })
+            .collect();
+        return (new_local_splits, new_remote_splits);
+    }
+
+    // Scale splits without division
+    let scaled_local: Vec<u64> = local_splits
+        .iter()
+        .map(|&split| split * local_percentage * total_remote)
+        .collect();
+
+    let scaled_remote: Vec<u64> = remote_splits
+        .iter()
+        .map(|&split| split * remote_percentage * total_local)
+        .collect();
+
+    // Combine all values to find the overall GCD
+    let mut all_values = scaled_local.clone();
+    all_values.extend(scaled_remote.iter());
+
+    let gcd_value = all_values
+        .iter()
+        .filter(|&&x| x != 0)
+        .fold(0, |acc, &x| gcd(acc, x));
+
+    // Simplify the results using the GCD
+    let final_local = scaled_local
+        .into_iter()
+        .map(|x| if x == 0 { 0 } else { x / gcd_value })
+        .collect();
+    let final_remote = scaled_remote
+        .into_iter()
+        .map(|x| if x == 0 { 0 } else { x / gcd_value })
+        .collect();
+
+    (final_local, final_remote)
+}
+
 /// Verifies Alby webhook requests.
 ///
 /// ## Example Axum usage
