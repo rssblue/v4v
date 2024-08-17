@@ -18,7 +18,7 @@ pub use svix_webhooks::{HeaderMap, WebhookError};
 /// ```rust
 /// let splits = vec![60, 40];
 /// let total_sats = 1000;
-/// assert_eq!(v4v::compute_sat_recipients(splits, total_sats), vec![600, 400]);
+/// assert_eq!(v4v::compute_sat_recipients(&splits, total_sats), vec![600, 400]);
 /// ```
 ///
 /// ## Example 2
@@ -26,7 +26,7 @@ pub use svix_webhooks::{HeaderMap, WebhookError};
 /// let splits = vec![1, 99];
 /// let total_sats = 10;
 /// // It's ensured that the recipient with 1% split still gets at least 1 sat:
-/// assert_eq!(v4v::compute_sat_recipients(splits, total_sats), vec![1, 9]);
+/// assert_eq!(v4v::compute_sat_recipients(&splits, total_sats), vec![1, 9]);
 /// ```
 ///
 /// ## Example 3
@@ -34,20 +34,21 @@ pub use svix_webhooks::{HeaderMap, WebhookError};
 /// let splits = vec![1, 99];
 /// let total_sats = 1;
 /// // There is only 1 sat available to distribute, so the recipient with the larger split gets it:
-/// assert_eq!(v4v::compute_sat_recipients(splits, total_sats), vec![0, 1]);
+/// assert_eq!(v4v::compute_sat_recipients(&splits, total_sats), vec![0, 1]);
 /// ```
-pub fn compute_sat_recipients(splits: Vec<u64>, total_sats: u64) -> Vec<u64> {
+pub fn compute_sat_recipients(splits: &[u64], total_sats: u64) -> Vec<u64> {
     let total_split: u64 = splits.iter().sum();
 
-    let mut sat_amounts = Vec::new();
-    for split in &splits {
-        let num_sats = if total_split == 0 {
-            0
-        } else {
-            split * total_sats / total_split
-        };
-        sat_amounts.push(num_sats);
-    }
+    let mut sat_amounts: Vec<u64> = splits
+        .iter()
+        .map(|&split| {
+            if total_split == 0 {
+                0
+            } else {
+                split * total_sats / total_split
+            }
+        })
+        .collect();
 
     let distributed_sats: u64 = sat_amounts.iter().sum();
     let mut remaining_sats = total_sats - distributed_sats;
@@ -152,9 +153,9 @@ impl std::fmt::Debug for RecipientsToSplitsError {
 /// // Share-based recipients still receive sats in the 50/50 ratio between them. But
 /// // overall, they get 49.5% each, and the percentage-based recipient gets the required 1%.
 /// // That's because 99/(99+99+2) = 49.5% and 2/(99+99+2) = 1%.
-/// assert_eq!(v4v::fee_recipients_to_splits(recipients), Ok(vec![99, 99, 2]));
+/// assert_eq!(v4v::fee_recipients_to_splits(&recipients), Ok(vec![99, 99, 2]));
 pub fn fee_recipients_to_splits(
-    recipients: Vec<GenericRecipient>,
+    recipients: &[GenericRecipient],
 ) -> Result<Vec<u64>, RecipientsToSplitsError> {
     let total_percentage: u64 = recipients
         .iter()
@@ -188,7 +189,7 @@ pub fn fee_recipients_to_splits(
 
     let mut result = Vec::with_capacity(recipients.len());
 
-    for recipient in &recipients {
+    for recipient in recipients {
         match recipient {
             GenericRecipient::ShareBased { num_shares } => {
                 result.push(num_shares * remaining_percentage);

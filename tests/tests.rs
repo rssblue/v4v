@@ -11,7 +11,7 @@ macro_rules! compute_sat_recipients_tests {
                         total_sats: u64,
                         expected_sats: Vec<u64>,
                     }
-                    assert_eq!(v4v::compute_sat_recipients($value.splits, $value.total_sats), $value.expected_sats);
+                    assert_eq!(v4v::compute_sat_recipients(&$value.splits, $value.total_sats), $value.expected_sats);
                 }
             )*
         }
@@ -63,7 +63,7 @@ macro_rules! fee_recipients_to_splits_tests {
                         recipients: Vec<v4v::GenericRecipient>,
                         expected_splits: Result<Vec<u64>, v4v::RecipientsToSplitsError>,
                     }
-                    assert_eq!(v4v::fee_recipients_to_splits($value.recipients), $value.expected_splits);
+                    assert_eq!(v4v::fee_recipients_to_splits(&$value.recipients), $value.expected_splits);
                 }
             )*
         }
