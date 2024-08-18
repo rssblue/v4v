@@ -6,6 +6,8 @@
 pub mod alby {
     /// Alby API types and functions.
     pub mod api;
+    /// Helper functions.
+    mod helpers;
     /// Alby webhook utilities.
     pub mod webhooks;
 }
