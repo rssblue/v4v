@@ -128,7 +128,7 @@ pub mod payments {
 
     /// Request body for [keysend].
     #[derive(Debug, serde::Serialize)]
-    pub struct KeysendRequest {
+    struct KeysendRequest {
         /// The amount of sats.
         #[serde(rename = "amount")]
         pub num_sats: u64,
@@ -186,7 +186,7 @@ pub mod payments {
 
     /// Request body for [multi_keysend].
     #[derive(Debug, serde::Serialize)]
-    pub struct MultiKeysendRequest {
+    struct MultiKeysendRequest {
         /// Array of keysend objects.
         pub keysends: Vec<KeysendRequest>,
     }
