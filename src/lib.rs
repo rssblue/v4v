@@ -2,8 +2,19 @@
 #![deny(missing_docs)]
 #![deny(rustdoc::broken_intra_doc_links)]
 
-mod svix_webhooks;
-pub use svix_webhooks::{HeaderMap, WebhookError};
+/// [Alby](https://getalby.com)-specific types and functions.
+pub mod alby {
+    /// Alby API types and functions.
+    pub mod api;
+    /// Alby webhook utilities.
+    pub mod webhooks;
+}
+
+/// This is forked from <https://github.com/svix/svix-webhooks/blob/main/rust/src/webhooks.rs> to
+/// minimize the amount of dependencies.
+mod svix {
+    pub mod webhooks;
+}
 
 /// Distributes [satoshis (sats)](https://en.wikipedia.org/wiki/Bitcoin#Units_and_divisibility) to
 /// a list of recipients based on their splits.
@@ -89,8 +100,7 @@ pub fn compute_sat_recipients(splits: &[u64], total_sats: u64) -> Vec<u64> {
     sat_amounts
 }
 
-/// Similar to [compute_sat_recipients](crate::compute_sat_recipients) but allows to use it with
-/// any type that uses splits.
+/// Similar to [compute_sat_recipients] but allows to use it with any type that uses splits.
 pub fn compute_sat_recipients_generic<T: HasSplit + Clone>(
     values: &[T],
     total_sats: u64,
@@ -234,8 +244,8 @@ pub fn fee_recipients_to_splits(
     Ok(result)
 }
 
-/// Similar to [fee_recipients_to_splits](crate::fee_recipients_to_splits) but allows to use it
-/// with any type that uses splits and implements `Into<crate::GenericRecipient>`.
+/// Similar to [fee_recipients_to_splits] but allows to use it with any type that uses splits and
+/// implements `Into<crate::GenericRecipient>`.
 pub fn fee_recipients_to_splits_generic<T: Into<GenericRecipient> + HasSplit + Clone>(
     recipients: &[T],
 ) -> Result<Vec<T>, RecipientsToSplitsError> {
@@ -341,8 +351,7 @@ pub trait HasSplit {
     fn get_split(&self) -> u64;
 }
 
-/// Similar to [use_remote_splits](crate::use_remote_splits) but allows to use it with any type
-/// that uses splits.
+/// Similar to [use_remote_splits] but allows to use it with any type that uses splits.
 pub fn use_remote_splits_generic<T: HasSplit + Clone>(
     local_values: &[T],
     remote_values: &[T],
@@ -366,52 +375,4 @@ pub fn use_remote_splits_generic<T: HasSplit + Clone>(
     }
 
     result
-}
-
-/// Verifies Alby webhook requests.
-///
-/// ## Example Axum usage
-/// ```ignore
-/// use axum::{
-///     extract::Json,
-///     routing::post,
-///     Router,
-///     http::StatusCode,
-/// };
-///
-/// fn router() -> Router {
-///     Router::new()
-///         .route(
-///             "/alby-webhook",
-///             post(webhook_handler)
-///         )
-/// }
-///
-/// async fn webhook_handler(
-///     headers: http::header::HeaderMap,
-///     Json(body): Json<serde_json::Value>,
-/// ) -> StatusCode {
-///     match v4v::verify_alby_signature(&secret, body.to_string().as_bytes(), &headers) {
-///         Ok(()) => {}
-///         Err(e) => {
-///             log::error!("Failed to verify webhook: {:?}", e);
-///             return StatusCode::BAD_REQUEST;
-///         }
-///     };
-///
-///     match save_to_db(&body).await {
-///         Ok(_) => StatusCode::NO_CONTENT,
-///         Err(e) => {
-///             log::error!("Failed to record Alby payment: {}", e);
-///             StatusCode::INTERNAL_SERVER_ERROR
-///         }
-///     }
-/// }
-/// ```
-pub fn verify_alby_signature<HM: HeaderMap>(
-    secret: &str,
-    payload: &[u8],
-    headers: &HM,
-) -> Result<(), WebhookError> {
-    crate::svix_webhooks::Webhook::new(secret)?.verify(payload, headers)
 }

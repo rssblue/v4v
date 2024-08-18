@@ -286,12 +286,12 @@ macro_rules! fee_recipients_to_splits_generic_tests {
                         }
                     }
 
-                    impl Into<v4v::GenericRecipient> for MyStruct {
-                        fn into(self) -> v4v::GenericRecipient {
-                            if self.fee {
-                                v4v::GenericRecipient::PercentageBased { percentage: self.split }
+                    impl From<MyStruct> for v4v::GenericRecipient {
+                        fn from(value: MyStruct) -> Self {
+                            if value.fee {
+                                v4v::GenericRecipient::PercentageBased { percentage: value.split }
                             } else {
-                                v4v::GenericRecipient::ShareBased { num_shares: self.split }
+                                v4v::GenericRecipient::ShareBased { num_shares: value.split }
                             }
                         }
                     }

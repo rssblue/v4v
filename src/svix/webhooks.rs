@@ -1,6 +1,3 @@
-// This is forked from https://github.com/svix/svix-webhooks/blob/main/rust/src/webhooks.rs to
-// minimize the amount of dependencies.
-//
 // SPDX-FileCopyrightText: © 2022 Svix Authors
 // SPDX-License-Identifier: MIT
 use base64::{engine::general_purpose::STANDARD, Engine as _};
