@@ -1,4 +1,5 @@
-use crate::alby::helpers::{make_request, ErrorResponse, RequestArgs, RequestError};
+pub use crate::alby::helpers::RequestError;
+use crate::alby::helpers::{make_request, ErrorResponse, RequestArgs};
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
 

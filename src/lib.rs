@@ -8,6 +8,8 @@ pub mod alby {
     pub mod api;
     /// Helper functions.
     mod helpers;
+    /// Extra Alby types.
+    pub mod types;
     /// Alby webhook utilities.
     pub mod webhooks;
 }
@@ -16,6 +18,12 @@ pub mod alby {
 /// minimize the amount of dependencies.
 mod svix {
     pub mod webhooks;
+}
+
+/// Podcasting-related helpers.
+pub mod podcasting {
+    /// Podcasting-related types.
+    pub mod types;
 }
 
 /// Distributes [satoshis (sats)](https://en.wikipedia.org/wiki/Bitcoin#Units_and_divisibility) to

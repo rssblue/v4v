@@ -15,6 +15,8 @@ pub struct ErrorResponse {
 /// Alby API request error.
 #[derive(Debug)]
 pub enum RequestError {
+    /// Unexpected error.
+    Unexpected(String),
     /// Failed to create auth header.
     AuthHeaderCreation(reqwest::header::InvalidHeaderValue),
     /// Failed to create reqwest client.
@@ -41,6 +43,7 @@ pub enum RequestError {
 impl fmt::Display for RequestError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            RequestError::Unexpected(e) => write!(f, "Unexpected error: {}", e),
             RequestError::AuthHeaderCreation(e) => write!(f, "Failed to create auth header: {}", e),
             RequestError::ClientCreation(e) => write!(f, "Failed to create reqwest client: {}", e),
             RequestError::RequestSend(e) => write!(f, "Failed to send request: {}", e),
@@ -64,6 +67,7 @@ impl fmt::Display for RequestError {
 impl std::error::Error for RequestError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
+            RequestError::Unexpected(_) => None,
             RequestError::AuthHeaderCreation(e) => Some(e),
             RequestError::ClientCreation(e) => Some(e),
             RequestError::RequestSend(e) => Some(e),
