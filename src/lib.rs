@@ -22,8 +22,10 @@ mod svix {
 
 /// Podcasting-related helpers.
 pub mod podcasting {
-    /// Podcasting-related types.
-    pub mod types;
+    /// Podcasting-related payment utilities.
+    pub mod payments;
+    /// Utilities related to Podcasting 2.0 TLV records.
+    pub mod tlv;
 }
 
 /// Distributes [satoshis (sats)](https://en.wikipedia.org/wiki/Bitcoin#Units_and_divisibility) to

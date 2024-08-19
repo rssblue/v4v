@@ -1,32 +1,8 @@
-/// Action for Podcasting 2.0 payment.
-#[derive(
-    Debug, Default, serde::Deserialize, PartialEq, Clone, serde::Serialize, strum_macros::Display,
-)]
-#[serde(rename_all = "lowercase")]
-pub enum Action {
-    /// One-time payment.
-    #[default]
-    Boost,
-    /// Stream payment.
-    Stream,
-    /// Auto payment.
-    Auto,
-}
-
-use std::collections::HashMap;
-
+use super::payments::Action;
 use chrono::Duration;
 use serde_json::Value;
 use url::Url;
 use uuid::Uuid;
-
-use crate::alby::{
-    api::{
-        payments::{MultiKeysendItemArgs, MultiKeysendResponse},
-        RequestError,
-    },
-    types::KeysendAddress,
-};
 
 /// bLIP-10 TLV record coming from an untrusted source.
 ///
@@ -34,7 +10,7 @@ use crate::alby::{
 /// <https://github.com/Podcastindex-org/podcast-namespace/blob/main/value/blip-0010.md#fields>
 /// standard so will make it as generic as possible.
 #[derive(Debug, serde::Deserialize)]
-pub struct UntrustedTlvRecord {
+pub struct UntrustedRecord {
     /// ACTION
     /// "boost", "stream" or "auto"
     action: Value,
@@ -153,36 +129,36 @@ pub struct UntrustedTlvRecord {
 
 /// Well-formed bLIP-10 TLV record.
 #[derive(Debug, serde::Serialize)]
-pub struct TlvRecord {
+pub struct Record {
     /// ACTION
-    action: Action,
+    pub action: Action,
 
     /// FEED IDENTIFIER
     ///
     ///  The `<podcast:guid>` tag.
     #[serde(rename = "guid", skip_serializing_if = "Option::is_none")]
-    feed_guid: Option<Uuid>,
+    pub feed_guid: Option<Uuid>,
     /// title of the feed
     #[serde(rename = "podcast", skip_serializing_if = "Option::is_none")]
-    feed_name: Option<String>,
+    pub feed_name: Option<String>,
     /// ID of podcast in PodcastIndex.org directory
     #[serde(rename = "feedID", skip_serializing_if = "Option::is_none")]
-    feed_pi_id: Option<u64>,
+    pub feed_pi_id: Option<u64>,
     /// RSS feed URL of podcast
     #[serde(rename = "url", skip_serializing_if = "Option::is_none")]
-    feed_url: Option<Url>,
+    pub feed_url: Option<Url>,
 
     /// ITEM IDENTIFIER
     ///
     /// The `<item:guid>` tag.
     #[serde(rename = "episode_guid", skip_serializing_if = "Option::is_none")]
-    item_guid: Option<String>,
+    pub item_guid: Option<String>,
     /// title of the item
     #[serde(rename = "episode", skip_serializing_if = "Option::is_none")]
-    item_name: Option<String>,
+    pub item_name: Option<String>,
     /// ID of the item in PodcastIndex.org directory
     #[serde(rename = "itemID", skip_serializing_if = "Option::is_none")]
-    item_pi_id: Option<u64>,
+    pub item_pi_id: Option<u64>,
 
     /// PLAYBACK INFO
     ///
@@ -192,83 +168,83 @@ pub struct TlvRecord {
         skip_serializing_if = "Option::is_none",
         serialize_with = "serialize_duration_to_seconds"
     )]
-    timestamp_seconds: Option<Duration>,
+    pub timestamp_seconds: Option<Duration>,
     /// Timestamp of when the payment was sent, in HH:MM:SS notation, as an offset from 00:00:00 (i.e. - playback position).
     #[serde(
         rename = "time",
         skip_serializing_if = "Option::is_none",
         serialize_with = "serialize_duration_to_timestamp"
     )]
-    timestamp_hhmmss: Option<Duration>,
+    pub timestamp_hhmmss: Option<Duration>,
     /// Speed in which the podcast was playing, in decimal notation at the time the payment was sent. So 0.5 is half speed and 2 is double speed.
     #[serde(skip_serializing_if = "Option::is_none")]
-    speed: Option<f64>,
+    pub speed: Option<f64>,
 
     /// APP INFO
     ///
     /// Name of sending app
     #[serde(skip_serializing_if = "Option::is_none")]
-    app_name: Option<String>,
+    pub app_name: Option<String>,
     /// Version of sending app
     #[serde(skip_serializing_if = "Option::is_none")]
-    app_version: Option<String>,
+    pub app_version: Option<String>,
 
     /// SENDER INFO
     ///
     /// Name of the sender (free text, not validated in any way)
     #[serde(skip_serializing_if = "Option::is_none")]
-    sender_name: Option<String>,
+    pub sender_name: Option<String>,
     /// Static random identifier for users, not displayed by apps to prevent abuse. Apps can set this per-feed or app-wide. A GUID-like random identifier or a hash works well. Max 32 bytes (64 ascii characters). This can be a Nostr hex encoded pubkey (not NIP-19) for purposes of sender attribution.
     #[serde(skip_serializing_if = "Option::is_none")]
-    sender_id: Option<String>,
+    pub sender_id: Option<String>,
 
     /// RECEIVER INFO
     ///
     /// Name for this split in value tag
     #[serde(rename = "name", skip_serializing_if = "Option::is_none")]
-    receiver_name: Option<String>,
+    pub receiver_name: Option<String>,
 
     /// PAYMENT INFO
     ///
     /// Total number of millisats for the payment before any fees are subtracted. This should be the number the listener entered into the app. Preserving this value is important for numerology reasons. Certain numeric values can have significance to the sender and/or receiver, so giving a way to show this is critical.
     #[serde(skip_serializing_if = "Option::is_none")]
-    value_msat_total: Option<u64>,
+    pub value_msat_total: Option<u64>,
     /// Text message to add to the payment. When this field is present, the payment is known as a "boostagram".
     #[serde(skip_serializing_if = "Option::is_none")]
-    message: Option<String>,
+    pub message: Option<String>,
     /// App-specific URL containing route to podcast, episode, and/or timestamp at time of the action. The use case for this is sending a link along with the payment that will take the recipient to the exact playback position within the episode where the payment was sent.
     #[serde(skip_serializing_if = "Option::is_none")]
-    boost_link: Option<Url>,
+    pub boost_link: Option<Url>,
     /// Optionally, this field can contain a signature for the payment, to be able to verify that the user who sent it is actually who they claim in the sender_id field. If the sender_id contains a Nostr public key, this field should contain a Nostr sig value as a 64-byte encoded hex string. For the purpose of generating the Nostr signature, the following data should be serialized: [0,sender_id,ts,1,[],message] to conform to the NIP-01 specification. The resulting serialized string should be hashed with sha256 to obtain the value.
     #[serde(rename = "signature", skip_serializing_if = "Option::is_none")]
-    payment_signature: Option<String>,
+    pub payment_signature: Option<String>,
     /// UUID of a payment sent out to a single recipient.
     #[serde(rename = "uuid", skip_serializing_if = "Option::is_none")]
-    payment_id: Option<String>,
+    pub payment_id: Option<String>,
     /// UUID for the boost/stream/auto payment. If there are several recipients, the same identifier should be sent to all of them.
     #[serde(rename = "boost_uuid", skip_serializing_if = "Option::is_none")]
-    boost_id: Option<String>,
+    pub boost_id: Option<String>,
 
     /// REMOTE INFO
     ///
     /// Sometimes a payment will be sent to a feed's value block because a different feed referenced it in a <podcast:valueTimeSplit> tag. When that happens, this field will contain the guid of the referencing feed.
     #[serde(skip_serializing_if = "Option::is_none")]
-    remote_feed_guid: Option<Uuid>,
+    pub remote_feed_guid: Option<Uuid>,
     /// Sometimes a payment will be sent to an episode's value block because a different feed referenced it in a <podcast:valueTimeSplit> tag. When that happens, this field will contain the guid of the referencing feed's <item>.
     #[serde(skip_serializing_if = "Option::is_none")]
-    remote_item_guid: Option<String>,
+    pub remote_item_guid: Option<String>,
 
     /// REPLY INFO
     ///
     /// The pubkey of the lightning node that can receive payments for the sender. The node given must be capable of receiving keysend payments. If this field contains an "@" symbol, it should be interpreted as a "lightning address".
     #[serde(skip_serializing_if = "Option::is_none")]
-    reply_address: Option<String>,
+    pub reply_address: Option<String>,
     /// The custom key for routing a reply payment to the sender. This field should not be present if it is not required for payment routing.
     #[serde(skip_serializing_if = "Option::is_none")]
-    reply_custom_key: Option<String>,
+    pub reply_custom_key: Option<String>,
     /// The custom value for routing a reply payment to the sender. This field should not be present if it is not required for payment routing.
     #[serde(skip_serializing_if = "Option::is_none")]
-    reply_custom_value: Option<String>,
+    pub reply_custom_value: Option<String>,
 }
 
 fn json_value_to_string(value: Value) -> Option<String> {
@@ -393,8 +369,8 @@ where
     }
 }
 
-impl From<UntrustedTlvRecord> for TlvRecord {
-    fn from(record: UntrustedTlvRecord) -> Self {
+impl From<UntrustedRecord> for Record {
+    fn from(record: UntrustedRecord) -> Self {
         Self {
             action: match record.action {
                 Value::String(string) => match string.as_str() {
@@ -447,172 +423,4 @@ impl From<UntrustedTlvRecord> for TlvRecord {
             reply_custom_value: json_value_to_string(record.reply_custom_value),
         }
     }
-}
-
-/// Recipient arguments for [keysend_payment].
-#[derive(Debug)]
-pub struct KeysendPaymentRecipientArgs {
-    /// Recipient's keysend address.
-    pub address: KeysendAddress,
-    /// Number of sats to send.
-    pub num_sats: u64,
-    /// UUID of a payment sent out to a single recipient.
-    pub payment_id: Option<String>,
-    /// Optionally, this field can contain a signature for the payment, to be able to verify that the user who sent it is actually who they claim in the sender_id field. If the sender_id contains a Nostr public key, this field should contain a Nostr sig value as a 64-byte encoded hex string. For the purpose of generating the Nostr signature, the following data should be serialized: [0,sender_id,ts,1,[],message] to conform to the NIP-01 specification. The resulting serialized string should be hashed with sha256 to obtain the value.
-    pub payment_signature: Option<String>,
-    /// Recipient's name.
-    pub name: Option<String>,
-}
-
-/// Arguments for [keysend_payment].
-#[derive(Debug, Default)]
-pub struct KeysendPaymentArgs<'a> {
-    /// User agent.
-    pub user_agent: &'a str,
-    /// Token.
-    pub token: &'a str,
-
-    /// ACTION
-    pub action: Action,
-
-    /// FEED IDENTIFIER
-    ///
-    ///  The `<podcast:guid>` tag.
-    pub feed_guid: Option<Uuid>,
-    /// Title of the feed.
-    pub feed_name: Option<String>,
-    /// ID of podcast in PodcastIndex.org directory.
-    pub feed_pi_id: Option<u64>,
-    /// RSS feed URL of podcast.
-    pub feed_url: Option<Url>,
-
-    /// ITEM IDENTIFIER
-    ///
-    /// The `<item:guid>` tag.
-    pub item_guid: Option<String>,
-    /// Title of the item.
-    pub item_name: Option<String>,
-    /// ID of the item in PodcastIndex.org directory
-    pub item_pi_id: Option<u64>,
-
-    /// PLAYBACK INFO
-    ///
-    ///  Timestamp of when the payment was sent as an offset from zero (i.e. - playback position).
-    pub timestamp: Option<Duration>,
-    /// Speed in which the podcast was playing, in decimal notation at the time the payment was sent. So 0.5 is half speed and 2 is double speed.
-    pub speed: Option<f64>,
-
-    /// APP INFO
-    ///
-    /// Name of sending app
-    pub app_name: Option<String>,
-    /// Version of sending app
-    pub app_version: Option<String>,
-
-    /// SENDER INFO
-    ///
-    /// Name of the sender (free text, not validated in any way)
-    pub sender_name: Option<String>,
-    /// Static random identifier for users, not displayed by apps to prevent abuse. Apps can set this per-feed or app-wide. A GUID-like random identifier or a hash works well. Max 32 bytes (64 ascii characters). This can be a Nostr hex encoded pubkey (not NIP-19) for purposes of sender attribution.
-    pub sender_id: Option<String>,
-
-    /// PAYMENT INFO
-    ///
-    /// Total number of sats for the payment before any fees are subtracted. This should be the number the listener entered into the app. Preserving this value is important for numerology reasons. Certain numeric values can have significance to the sender and/or receiver, so giving a way to show this is critical.
-    pub num_sats: Option<u64>,
-    /// Text message to add to the payment. When this field is present, the payment is known as a "boostagram".
-    pub message: Option<String>,
-    /// App-specific URL containing route to podcast, episode, and/or timestamp at time of the action. The use case for this is sending a link along with the payment that will take the recipient to the exact playback position within the episode where the payment was sent.
-    pub boost_link: Option<Url>,
-    /// UUID for the boost/stream/auto payment. If there are several recipients, the same identifier should be sent to all of them.
-    pub boost_id: Option<String>,
-
-    /// REMOTE INFO
-    ///
-    /// Sometimes a payment will be sent to a feed's value block because a different feed referenced it in a <podcast:valueTimeSplit> tag. When that happens, this field will contain the guid of the referencing feed.
-    pub remote_feed_guid: Option<Uuid>,
-    /// Sometimes a payment will be sent to an episode's value block because a different feed referenced it in a <podcast:valueTimeSplit> tag. When that happens, this field will contain the guid of the referencing feed's <item>.
-    pub remote_item_guid: Option<String>,
-
-    /// Keysend address of the sender.
-    pub reply_address: Option<KeysendAddress>,
-
-    /// Recipients.
-    pub recipients: Vec<KeysendPaymentRecipientArgs>,
-}
-
-/// Send a keysend payment to multiple Podcasting 2.0 recipients using the Alby API.
-pub async fn keysend_payment(
-    args: KeysendPaymentArgs<'_>,
-) -> Result<MultiKeysendResponse, RequestError> {
-    let mut keysends: Vec<MultiKeysendItemArgs> = vec![];
-
-    for recipient in args.recipients.iter() {
-        let mut custom_records = HashMap::new();
-        if let Some(custom_data) = recipient.address.custom_data.as_ref() {
-            custom_records.insert(custom_data.0.clone(), custom_data.1.clone());
-        }
-
-        let tlv_record = TlvRecord {
-            action: args.action.clone(),
-            feed_guid: args.feed_guid,
-            feed_name: args.feed_name.clone(),
-            feed_pi_id: args.feed_pi_id,
-            feed_url: args.feed_url.clone(),
-            item_guid: args.item_guid.clone(),
-            item_name: args.item_name.clone(),
-            item_pi_id: args.item_pi_id,
-            timestamp_seconds: args.timestamp,
-            timestamp_hhmmss: None,
-            speed: args.speed,
-            app_name: args.app_name.clone(),
-            app_version: args.app_version.clone(),
-            sender_name: args.sender_name.clone(),
-            sender_id: args.sender_id.clone(),
-            receiver_name: recipient.name.clone(),
-            value_msat_total: args.num_sats,
-            message: args.message.clone(),
-            boost_link: args.boost_link.clone(),
-            payment_signature: recipient.payment_signature.clone(),
-            payment_id: recipient.payment_id.clone(),
-            boost_id: args.boost_id.clone(),
-            remote_feed_guid: args.remote_feed_guid,
-            remote_item_guid: args.remote_item_guid.clone(),
-            reply_address: args
-                .reply_address
-                .as_ref()
-                .map(|address| address.pubkey.clone()),
-            reply_custom_key: args.reply_address.as_ref().and_then(|address| {
-                address
-                    .custom_data
-                    .as_ref()
-                    .map(|custom_data| custom_data.0.clone())
-            }),
-            reply_custom_value: args.reply_address.as_ref().and_then(|address| {
-                address
-                    .custom_data
-                    .as_ref()
-                    .map(|custom_data| custom_data.1.clone())
-            }),
-        };
-
-        let tlv_record_string = serde_json::to_string(&tlv_record).map_err(|error| {
-            RequestError::Unexpected(format!("Failed to serialize TLV record: {}", error))
-        })?;
-        // bLIP-10 TLV record:
-        custom_records.insert("7629169".to_string(), tlv_record_string);
-
-        keysends.push(MultiKeysendItemArgs {
-            num_sats: recipient.num_sats,
-            dest_pubkey: recipient.address.pubkey.as_str(),
-            custom_records,
-        });
-    }
-
-    crate::alby::api::payments::multi_keysend(crate::alby::api::payments::MultiKeysendArgs {
-        user_agent: args.user_agent,
-        token: args.token,
-        keysends,
-    })
-    .await
 }
