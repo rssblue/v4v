@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-use crate::podcasting::tlv::Record;
+use crate::pc20::tlv::Record;
 pub use crate::svix::webhooks::{HeaderMap, WebhookError as Error};
 
 /// Verifies Alby webhook requests.
@@ -86,7 +86,7 @@ pub struct AlbyInvoice {
     /// bLIP-10 TLV record.
     #[serde(
         default,
-        deserialize_with = "crate::podcasting::tlv::deserialize_untrusted_tlv_record"
+        deserialize_with = "crate::pc20::tlv::deserialize_untrusted_tlv_record"
     )]
     pub boostagram: Option<Record>,
 }

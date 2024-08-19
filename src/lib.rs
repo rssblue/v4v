@@ -21,9 +21,9 @@ mod svix {
 }
 
 /// Podcasting-related helpers.
-pub mod podcasting {
+pub mod pc20 {
     /// Functions related to sat caculations.
-    pub mod calculations;
+    pub mod calc;
     /// Utilities enabling to forward BOLT11 payments to keysend recipients.
     ///
     /// ## Example usage

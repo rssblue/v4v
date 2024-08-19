@@ -11,7 +11,7 @@
 /// ```rust
 /// let splits = vec![60, 40];
 /// let total_sats = 1000;
-/// assert_eq!(v4v::podcasting::calculations::compute_sat_recipients(&splits, total_sats), vec![600, 400]);
+/// assert_eq!(v4v::pc20::calc::compute_sat_recipients(&splits, total_sats), vec![600, 400]);
 /// ```
 ///
 /// ## Example 2
@@ -19,7 +19,7 @@
 /// let splits = vec![1, 99];
 /// let total_sats = 10;
 /// // It's ensured that the recipient with 1% split still gets at least 1 sat:
-/// assert_eq!(v4v::podcasting::calculations::compute_sat_recipients(&splits, total_sats), vec![1, 9]);
+/// assert_eq!(v4v::pc20::calc::compute_sat_recipients(&splits, total_sats), vec![1, 9]);
 /// ```
 ///
 /// ## Example 3
@@ -27,7 +27,7 @@
 /// let splits = vec![1, 99];
 /// let total_sats = 1;
 /// // There is only 1 sat available to distribute, so the recipient with the larger split gets it:
-/// assert_eq!(v4v::podcasting::calculations::compute_sat_recipients(&splits, total_sats), vec![0, 1]);
+/// assert_eq!(v4v::pc20::calc::compute_sat_recipients(&splits, total_sats), vec![0, 1]);
 /// ```
 pub fn compute_sat_recipients(splits: &[u64], total_sats: u64) -> Vec<u64> {
     let total_split: u64 = splits.iter().sum();
@@ -153,14 +153,14 @@ impl std::fmt::Debug for RecipientsToSplitsError {
 /// ## Example 1
 /// ```rust
 /// let recipients = vec![
-///     v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 50 },
-///     v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 50 },
-///     v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: 1 },
+///     v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 50 },
+///     v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 50 },
+///     v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 1 },
 /// ];
 /// // Share-based recipients still receive sats in the 50/50 ratio between them. But
 /// // overall, they get 49.5% each, and the percentage-based recipient gets the required 1%.
 /// // That's because 99/(99+99+2) = 49.5% and 2/(99+99+2) = 1%.
-/// assert_eq!(v4v::podcasting::calculations::fee_recipients_to_splits(&recipients), Ok(vec![99, 99, 2]));
+/// assert_eq!(v4v::pc20::calc::fee_recipients_to_splits(&recipients), Ok(vec![99, 99, 2]));
 pub fn fee_recipients_to_splits(
     recipients: &[GenericRecipient],
 ) -> Result<Vec<u64>, RecipientsToSplitsError> {
@@ -256,7 +256,7 @@ pub fn fee_recipients_to_splits_generic<T: Into<GenericRecipient> + HasSplit + C
 /// let remote_percentage = 90;
 /// // The remote split is 18, because 18/(18+1+1) = 90%. The local splits are 1 and 1, because
 /// // 1/(18+1+1) = 5%.
-/// assert_eq!(v4v::podcasting::calculations::use_remote_splits(&local_splits, &remote_splits, remote_percentage), (vec![1, 1], vec![18]));
+/// assert_eq!(v4v::pc20::calc::use_remote_splits(&local_splits, &remote_splits, remote_percentage), (vec![1, 1], vec![18]));
 pub fn use_remote_splits(
     local_splits: &[u64],
     remote_splits: &[u64],

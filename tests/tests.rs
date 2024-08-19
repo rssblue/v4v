@@ -11,7 +11,7 @@ macro_rules! compute_sat_recipients_tests {
                         total_sats: u64,
                         expected_sats: Vec<u64>,
                     }
-                    assert_eq!(v4v::podcasting::calculations::compute_sat_recipients(&$value.splits, $value.total_sats), $value.expected_sats);
+                    assert_eq!(v4v::pc20::calc::compute_sat_recipients(&$value.splits, $value.total_sats), $value.expected_sats);
                 }
             )*
         }
@@ -64,7 +64,7 @@ macro_rules! compute_sat_recipients_generic_tests {
                         split: u64,
                     }
 
-                    impl v4v::podcasting::calculations::HasSplit for MyStruct {
+                    impl v4v::pc20::calc::HasSplit for MyStruct {
                         fn get_split(&self) -> u64 {
                             self.split
                         }
@@ -79,7 +79,7 @@ macro_rules! compute_sat_recipients_generic_tests {
                         total_sats: u64,
                         expected_sats: Vec<u64>,
                     }
-                    assert_eq!(v4v::podcasting::calculations::compute_sat_recipients_generic(&$value.recipients, $value.total_sats), $value.expected_sats);
+                    assert_eq!(v4v::pc20::calc::compute_sat_recipients_generic(&$value.recipients, $value.total_sats), $value.expected_sats);
                 }
             )*
         }
@@ -104,10 +104,10 @@ macro_rules! fee_recipients_to_splits_tests {
                 #[test]
                 fn [<fee_recipients_to_splits_ $name>]() {
                     struct TestCase {
-                        recipients: Vec<v4v::podcasting::calculations::GenericRecipient>,
-                        expected_splits: Result<Vec<u64>, v4v::podcasting::calculations::RecipientsToSplitsError>,
+                        recipients: Vec<v4v::pc20::calc::GenericRecipient>,
+                        expected_splits: Result<Vec<u64>, v4v::pc20::calc::RecipientsToSplitsError>,
                     }
-                    assert_eq!(v4v::podcasting::calculations::fee_recipients_to_splits(&$value.recipients), $value.expected_splits);
+                    assert_eq!(v4v::pc20::calc::fee_recipients_to_splits(&$value.recipients), $value.expected_splits);
                 }
             )*
         }
@@ -117,147 +117,147 @@ macro_rules! fee_recipients_to_splits_tests {
 fee_recipients_to_splits_tests! {
     case_1: TestCase {
         recipients: vec![
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 50 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 50 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 50 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 50 },
         ],
         expected_splits: Ok(vec![1, 1]),
     },
     case_2: TestCase {
         recipients: vec![
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 50 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 50 },
-            v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: 2 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 50 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 50 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 2 },
         ],
         expected_splits: Ok(vec![49, 49, 2]),
     },
     case_3: TestCase {
         recipients: vec![
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 50 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 50 },
-            v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: 1 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 50 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 50 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 1 },
         ],
         expected_splits: Ok(vec![99, 99, 2]),
     },
     case_4: TestCase {
         recipients: vec![
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 50 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 50 },
-            v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: 1 },
-            v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: 1 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 50 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 50 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 1 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 1 },
         ],
         expected_splits: Ok(vec![49, 49, 1, 1]),
     },
     case_5: TestCase {
         recipients: vec![
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 1 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 1 },
-            v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: 2 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 1 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 1 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 2 },
         ],
         expected_splits: Ok(vec![49, 49, 2]),
     },
     case_6: TestCase {
         recipients: vec![
-            v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: 100 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 100 },
         ],
         expected_splits: Ok(vec![1]),
     },
     case_7: TestCase {
         recipients: vec![
-            v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: 2 },
-            v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: 1 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 2 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 1 },
         ],
         expected_splits: Ok(vec![2, 1]),
     },
     case_8: TestCase {
         recipients: vec![
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 10 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 20 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 30 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 40 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 10 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 20 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 30 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 40 },
         ],
         expected_splits: Ok(vec![1, 2, 3, 4]),
     },
     case_9: TestCase {
         recipients: vec![
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 10 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 20 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 30 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 40 },
-            v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: 1 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 10 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 20 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 30 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 40 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 1 },
         ],
         expected_splits: Ok(vec![99, 198, 297, 396, 10]),
     },
     case_10: TestCase {
         recipients: vec![
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 10 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 20 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 30 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 40 },
-            v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: 1 },
-            v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: 1 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 10 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 20 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 30 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 40 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 1 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 1 },
         ],
         expected_splits: Ok(vec![49, 98, 147, 196, 5, 5]),
     },
     // Change order:
     case_11: TestCase {
         recipients: vec![
-            v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: 1 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 10 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 20 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 30 },
-            v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: 1 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 40 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 1 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 10 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 20 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 30 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 1 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 40 },
         ],
         expected_splits: Ok(vec![5, 49, 98, 147, 5, 196]),
     },
     case_12: TestCase {
         recipients: vec![
-            v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: 100 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 100 },
         ],
         expected_splits: Ok(vec![1]),
     },
     case_13: TestCase {
         recipients: vec![
-            v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: 1 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 1 },
         ],
         expected_splits: Ok(vec![1]),
     },
     case_14: TestCase {
         recipients: vec![
-            v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: 101 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 101 },
         ],
-        expected_splits: Err(v4v::podcasting::calculations::RecipientsToSplitsError::TotalFeeExceeds100),
+        expected_splits: Err(v4v::pc20::calc::RecipientsToSplitsError::TotalFeeExceeds100),
     },
     case_15: TestCase {
         recipients: vec![
-            v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: 100 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 1 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 100 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 1 },
         ],
-        expected_splits: Err(v4v::podcasting::calculations::RecipientsToSplitsError::FeeIs100ButNonFeeRecipientsExist),
+        expected_splits: Err(v4v::pc20::calc::RecipientsToSplitsError::FeeIs100ButNonFeeRecipientsExist),
     },
     case_16: TestCase {
         recipients: vec![
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 50 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 40 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 3 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 2 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 2 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 1 },
-            v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: 2 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 50 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 40 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 3 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 2 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 2 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 1 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 2 },
         ],
         expected_splits: Ok(vec![50, 40, 3, 2, 2, 1, 2]),
     },
     case_17: TestCase {
         recipients: vec![
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 99999 },
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 1 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 99999 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 1 },
         ],
         expected_splits: Ok(vec![99999, 1]),
     },
     case_18: TestCase {
         recipients: vec![
-            v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: 0 },
-            v4v::podcasting::calculations::GenericRecipient::PercentageBased{ percentage: 0 },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 0 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased{ percentage: 0 },
         ],
         expected_splits: Ok(vec![0, 0]),
     },
@@ -275,7 +275,7 @@ macro_rules! fee_recipients_to_splits_generic_tests {
                         fee: bool,
                     }
 
-                    impl v4v::podcasting::calculations::HasSplit for MyStruct {
+                    impl v4v::pc20::calc::HasSplit for MyStruct {
                         fn get_split(&self) -> u64 {
                             self.split
                         }
@@ -286,21 +286,21 @@ macro_rules! fee_recipients_to_splits_generic_tests {
                         }
                     }
 
-                    impl From<MyStruct> for v4v::podcasting::calculations::GenericRecipient {
+                    impl From<MyStruct> for v4v::pc20::calc::GenericRecipient {
                         fn from(value: MyStruct) -> Self {
                             if value.fee {
-                                v4v::podcasting::calculations::GenericRecipient::PercentageBased { percentage: value.split }
+                                v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: value.split }
                             } else {
-                                v4v::podcasting::calculations::GenericRecipient::ShareBased { num_shares: value.split }
+                                v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: value.split }
                             }
                         }
                     }
 
                     struct TestCase {
                         recipients: Vec<MyStruct>,
-                        expected_recipients: Result<Vec<MyStruct>, v4v::podcasting::calculations::RecipientsToSplitsError>,
+                        expected_recipients: Result<Vec<MyStruct>, v4v::pc20::calc::RecipientsToSplitsError>,
                     }
-                    assert_eq!(v4v::podcasting::calculations::fee_recipients_to_splits_generic(&$value.recipients), $value.expected_recipients);
+                    assert_eq!(v4v::pc20::calc::fee_recipients_to_splits_generic(&$value.recipients), $value.expected_recipients);
                 }
             )*
         }
@@ -345,7 +345,7 @@ macro_rules! use_remote_splits_tests {
                         expected_local_splits: Vec<u64>,
                         expected_remote_splits: Vec<u64>,
                     }
-                    assert_eq!(v4v::podcasting::calculations::use_remote_splits(&$value.local_splits, &$value.remote_splits, $value.remote_percentage), ($value.expected_local_splits, $value.expected_remote_splits));
+                    assert_eq!(v4v::pc20::calc::use_remote_splits(&$value.local_splits, &$value.remote_splits, $value.remote_percentage), ($value.expected_local_splits, $value.expected_remote_splits));
                 }
             )*
         }
@@ -414,7 +414,7 @@ macro_rules! use_remote_splits_generic_tests {
                     struct MyStruct {
                         split: u64,
                     }
-                    impl v4v::podcasting::calculations::HasSplit for MyStruct {
+                    impl v4v::pc20::calc::HasSplit for MyStruct {
                         fn get_split(&self) -> u64 {
                             self.split
                         }
@@ -430,7 +430,7 @@ macro_rules! use_remote_splits_generic_tests {
                         remote_percentage: u64,
                         expected_values: Vec<MyStruct>,
                     }
-                    assert_eq!(v4v::podcasting::calculations::use_remote_splits_generic(&$value.local_values, &$value.remote_values, $value.remote_percentage), $value.expected_values);
+                    assert_eq!(v4v::pc20::calc::use_remote_splits_generic(&$value.local_values, &$value.remote_values, $value.remote_percentage), $value.expected_values);
                 }
             )*
         }

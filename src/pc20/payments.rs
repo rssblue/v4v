@@ -74,8 +74,8 @@ pub struct PaymentInfo {
     ///
     ///  Timestamp of when the payment was sent as an offset from zero (i.e. - playback position).
     #[serde(
-        serialize_with = "crate::podcasting::tlv::serialize_duration_to_seconds",
-        deserialize_with = "crate::podcasting::tlv::deserialize_seconds"
+        serialize_with = "crate::pc20::tlv::serialize_duration_to_seconds",
+        deserialize_with = "crate::pc20::tlv::deserialize_seconds"
     )]
     pub timestamp: Option<Duration>,
     /// Speed in which the podcast was playing, in decimal notation at the time the payment was sent. So 0.5 is half speed and 2 is double speed.
