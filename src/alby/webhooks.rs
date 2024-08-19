@@ -26,7 +26,7 @@ pub use crate::svix::webhooks::{HeaderMap, WebhookError as Error};
 ///     headers: http::header::HeaderMap,
 ///     Json(body): Json<serde_json::Value>,
 /// ) -> StatusCode {
-///     match v4v::verify_signature(&secret, body.to_string().as_bytes(), &headers) {
+///     match v4v::alby::webhooks::verify_signature(&secret, body.to_string().as_bytes(), &headers) {
 ///         Ok(()) => {}
 ///         Err(e) => {
 ///             log::error!("Failed to verify webhook: {:?}", e);

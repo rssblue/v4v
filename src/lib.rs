@@ -52,8 +52,8 @@ pub mod pc20 {
     ///
     /// #[derive(serde::Deserialize)]
     /// struct GenerateForwardingInvoiceRequest {
-    ///     pub payment_info: v4v::podcasting::payments::PaymentInfo,
-    ///     pub recipients: Vec<v4v::podcasting::payments::PaymentRecipientInfo>,
+    ///     pub payment_info: v4v::pc20::payments::PaymentInfo,
+    ///     pub recipients: Vec<v4v::pc20::payments::PaymentRecipientInfo>,
     /// }
     ///
     /// #[derive(serde::Serialize)]
@@ -67,8 +67,8 @@ pub mod pc20 {
     ///     // Might also want to do additional checks before generating invoice, e.g., limiting
     ///     // the amount.
     ///
-    ///     let resp = match v4v::podcasting::forwarding::create_invoice(
-    ///         v4v::podcasting::forwarding::CreateInvoiceArgs {
+    ///     let resp = match v4v::pc20::forwarding::create_invoice(
+    ///         v4v::pc20::forwarding::CreateInvoiceArgs {
     ///             user_agent: USER_AGENT,
     ///             token: ALBY_TOKEN,
     ///             payment_info: body.payment_info,
@@ -103,7 +103,7 @@ pub mod pc20 {
     ///         return StatusCode::OK;
     ///     }
     ///
-    ///     let metadata = match v4v::podcasting::forwarding::CreateInvoiceMetadata::try_from(
+    ///     let metadata = match v4v::pc20::forwarding::CreateInvoiceMetadata::try_from(
     ///         alby_invoice,
     ///         ) {
     ///             Ok(metadata) => metadata,
@@ -115,7 +115,7 @@ pub mod pc20 {
     ///     // Trim if the sum of payments somehow exceeds the total amount received.
     ///     let recipients = v4v::clip_recipients_at_amount(&recipients, alby_invoice.num_sats);
     ///
-    ///     match v4v::forward_payments(v4v::podcasting::forwarding::ForwardPaymentArgs {
+    ///     match v4v::forward_payments(v4v::pc20::forwarding::ForwardPaymentArgs {
     ///         user_agent: USER_AGENT,
     ///         token: ALBY_TOKEN,
     ///         payment_info,
