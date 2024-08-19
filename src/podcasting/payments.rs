@@ -156,7 +156,7 @@ pub async fn make_payment(args: MakePaymentArgs<'_>) -> Result<MultiKeysendRespo
             sender_name: args.payment_info.sender_name.clone(),
             sender_id: args.payment_info.sender_id.clone(),
             receiver_name: recipient.name.clone(),
-            value_msat_total: args.payment_info.total_num_sats,
+            total_num_millisats: args.payment_info.total_num_sats.map(|sats| sats * 1000),
             message: args.payment_info.message.clone(),
             boost_link: args.payment_info.boost_link.clone(),
             payment_signature: recipient.payment_signature.clone(),

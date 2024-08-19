@@ -207,8 +207,8 @@ pub struct Record {
     /// PAYMENT INFO
     ///
     /// Total number of millisats for the payment before any fees are subtracted. This should be the number the listener entered into the app. Preserving this value is important for numerology reasons. Certain numeric values can have significance to the sender and/or receiver, so giving a way to show this is critical.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value_msat_total: Option<u64>,
+    #[serde(rename = "value_msat_total", skip_serializing_if = "Option::is_none")]
+    pub total_num_millisats: Option<u64>,
     /// Text message to add to the payment. When this field is present, the payment is known as a "boostagram".
     #[serde(skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
@@ -396,7 +396,7 @@ impl From<UntrustedRecord> for Record {
             sender_name: json_value_to_string(record.sender_name),
             sender_id: json_value_to_string(record.sender_id),
             receiver_name: json_value_to_string(record.receiver_name),
-            value_msat_total: json_value_to_u64(record.value_msat_total),
+            total_num_millisats: json_value_to_u64(record.value_msat_total),
             message: json_value_to_string(record.message),
             boost_link: json_value_to_url(record.boost_link),
             payment_signature: json_value_to_string(record.payment_signature),
