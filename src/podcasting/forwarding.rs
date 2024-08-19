@@ -1,9 +1,12 @@
-use crate::alby::api::{
-    invoices::{CreateInvoiceArgs as AlbyCreateInvoiceArgs, CreateInvoiceResponse},
-    RequestError,
+pub use super::payments::MakePaymentArgs as ForwardPaymentArgs;
+use super::payments::{make_payment, PaymentInfo, PaymentRecipientInfo};
+use crate::alby::{
+    api::{
+        invoices::{CreateInvoiceArgs as AlbyCreateInvoiceArgs, CreateInvoiceResponse},
+        RequestError,
+    },
+    webhooks::AlbyInvoice,
 };
-
-use super::payments::{PaymentInfo, PaymentRecipientInfo};
 
 /// Arguments for creating an invoice for forwarding payments to multiple Podcasting 2.0
 /// recipients.
@@ -30,6 +33,16 @@ struct CreateInvoiceMetadataForwardingStruct {
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 struct CreateInvoiceMetadata {
     pub forwarding_data: CreateInvoiceMetadataForwardingStruct,
+}
+
+impl TryFrom<AlbyInvoice> for CreateInvoiceMetadata {
+    type Error = serde_json::Error;
+
+    fn try_from(invoice: AlbyInvoice) -> Result<Self, Self::Error> {
+        let forwarding_data = serde_json::from_value(invoice.metadata)?;
+
+        Ok(Self { forwarding_data })
+    }
 }
 
 /// Creates an invoice for forwarding payments to multiple Podcasting 2.0 recipients.
@@ -60,4 +73,16 @@ pub async fn create_invoice(
     };
 
     crate::alby::api::invoices::create_invoice(invoice_args).await
+}
+
+/// Forwards payments to multiple Podcasting 2.0 recipients.
+pub async fn forward_payments(args: ForwardPaymentArgs<'_>) -> Result<(), RequestError> {
+    make_payment(ForwardPaymentArgs {
+        user_agent: args.user_agent,
+        token: args.token,
+        payment_info: args.payment_info.clone(),
+        recipients: args.recipients.clone(),
+    })
+    .await
+    .map(|_| ())
 }

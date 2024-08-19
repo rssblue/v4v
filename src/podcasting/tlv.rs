@@ -10,7 +10,7 @@ use uuid::Uuid;
 /// <https://github.com/Podcastindex-org/podcast-namespace/blob/main/value/blip-0010.md#fields>
 /// standard so will make it as generic as possible.
 #[derive(Debug, serde::Deserialize)]
-pub struct UntrustedRecord {
+struct UntrustedRecord {
     /// ACTION
     /// "boost", "stream" or "auto"
     action: Value,
@@ -447,4 +447,22 @@ impl From<UntrustedRecord> for Record {
             reply_custom_value: json_value_to_string(record.reply_custom_value),
         }
     }
+}
+
+/// Deserialize a bLIP-10 TLV record from an untrusted source.
+pub fn deserialize_untrusted_tlv_record<'de, D>(deserializer: D) -> Result<Option<Record>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = match serde::Deserialize::deserialize(deserializer) {
+        Ok(value) => value,
+        Err(_) => return Ok(None),
+    };
+
+    let untrusted_record: UntrustedRecord = match serde_json::from_value(value) {
+        Ok(untrusted_record) => untrusted_record,
+        Err(_) => return Ok(None),
+    };
+
+    Ok(Some(untrusted_record.into()))
 }
