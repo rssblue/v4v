@@ -187,11 +187,19 @@ pub struct TlvRecord {
     /// PLAYBACK INFO
     ///
     ///  Timestamp of when the payment was sent, in seconds, as an offset from zero (i.e. - playback position).
-    #[serde(rename = "ts", skip_serializing_if = "Option::is_none")]
-    timestamp_seconds: Option<f64>,
+    #[serde(
+        rename = "ts",
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serialize_duration_to_seconds"
+    )]
+    timestamp_seconds: Option<Duration>,
     /// Timestamp of when the payment was sent, in HH:MM:SS notation, as an offset from 00:00:00 (i.e. - playback position).
-    #[serde(rename = "time", skip_serializing_if = "Option::is_none")]
-    timestamp_hhmmss: Option<String>,
+    #[serde(
+        rename = "time",
+        skip_serializing_if = "Option::is_none",
+        serialize_with = "serialize_duration_to_timestamp"
+    )]
+    timestamp_hhmmss: Option<Duration>,
     /// Speed in which the podcast was playing, in decimal notation at the time the payment was sent. So 0.5 is half speed and 2 is double speed.
     #[serde(skip_serializing_if = "Option::is_none")]
     speed: Option<f64>,
@@ -307,6 +315,84 @@ fn json_value_to_f64(value: Value) -> Option<f64> {
     }
 }
 
+/// Parse "HH:MM:SS" into [chrono::Duration].
+fn parse_timestamp_seconds(value: Value) -> Option<Duration> {
+    let hhmmss = match value {
+        Value::String(string) => string,
+        _ => return None,
+    };
+
+    let split: Vec<&str> = hhmmss.split(':').collect();
+
+    if split.len() != 3 {
+        return None;
+    }
+
+    let hours: i64 = split[0].parse().ok()?;
+    let minutes: i64 = split[1].parse().ok()?;
+    let seconds: i64 = split[2].parse().ok()?;
+
+    Some(Duration::hours(hours) + Duration::minutes(minutes) + Duration::seconds(seconds))
+}
+
+/// Parse seconds into [chrono::Duration].
+fn parse_seconds(value: Value) -> Option<Duration> {
+    match value {
+        Value::Number(number) => {
+            let seconds = number.as_f64();
+            if let Some(seconds) = seconds {
+                let milliseconds = seconds * 1000.0;
+                Some(Duration::milliseconds(milliseconds as i64))
+            } else {
+                None
+            }
+        }
+        _ => None,
+    }
+}
+
+/// Serialize [chrono::Duration] into "HH:MM:SS".
+fn serialize_duration_to_timestamp<S>(
+    duration: &Option<Duration>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    let duration = match duration {
+        Some(duration) => duration,
+        None => return serializer.serialize_none(),
+    };
+
+    let hours = duration.num_hours();
+    let minutes = duration.num_minutes() - hours * 60;
+    let seconds = duration.num_seconds() - hours * 3600 - minutes * 60;
+
+    let formatted = format!("{:02}:{:02}:{:02}", hours, minutes, seconds);
+    serializer.serialize_str(&formatted)
+}
+
+/// Serialize [chrono::Duration] into seconds.
+fn serialize_duration_to_seconds<S>(
+    duration: &Option<Duration>,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+{
+    let duration = match duration {
+        Some(duration) => duration,
+        None => return serializer.serialize_none(),
+    };
+
+    // If integer, serialize as integer.
+    if duration.num_milliseconds() % 1000 == 0 {
+        serializer.serialize_u64(duration.num_seconds() as u64)
+    } else {
+        serializer.serialize_f64(duration.num_seconds() as f64)
+    }
+}
+
 impl From<UntrustedTlvRecord> for TlvRecord {
     fn from(record: UntrustedTlvRecord) -> Self {
         Self {
@@ -326,8 +412,8 @@ impl From<UntrustedTlvRecord> for TlvRecord {
             item_guid: json_value_to_string(record.item_guid),
             item_name: json_value_to_string(record.item_name),
             item_pi_id: json_value_to_u64(record.item_pi_id),
-            timestamp_seconds: json_value_to_f64(record.timestamp_seconds),
-            timestamp_hhmmss: json_value_to_string(record.timestamp_hhmmss),
+            timestamp_seconds: parse_seconds(record.timestamp_seconds),
+            timestamp_hhmmss: parse_timestamp_seconds(record.timestamp_hhmmss),
             speed: json_value_to_f64(record.speed),
             app_name: json_value_to_string(record.app_name),
             app_version: json_value_to_string(record.app_version),
@@ -476,7 +562,7 @@ pub async fn keysend_payment(
             item_guid: args.item_guid.clone(),
             item_name: args.item_name.clone(),
             item_pi_id: args.item_pi_id,
-            timestamp_seconds: args.timestamp.map(|duration| duration.num_seconds() as f64),
+            timestamp_seconds: args.timestamp,
             timestamp_hhmmss: None,
             speed: args.speed,
             app_name: args.app_name.clone(),
@@ -513,6 +599,7 @@ pub async fn keysend_payment(
         let tlv_record_string = serde_json::to_string(&tlv_record).map_err(|error| {
             RequestError::Unexpected(format!("Failed to serialize TLV record: {}", error))
         })?;
+        // bLIP-10 TLV record:
         custom_records.insert("7629169".to_string(), tlv_record_string);
 
         keysends.push(MultiKeysendItemArgs {
