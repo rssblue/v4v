@@ -110,7 +110,7 @@ pub struct PaymentInfo {
     ///
     /// Sometimes a payment will be sent to a feed's value block because a different feed referenced it in a <podcast:valueTimeSplit> tag. When that happens, this field will contain the guid of the referencing feed.
     pub remote_feed_guid: Option<Uuid>,
-    /// Sometimes a payment will be sent to an episode's value block because a different feed referenced it in a <podcast:valueTimeSplit> tag. When that happens, this field will contain the guid of the referencing feed's <item>.
+    /// Sometimes a payment will be sent to an episode's value block because a different feed referenced it in a <podcast:valueTimeSplit> tag. When that happens, this field will contain the guid of the referencing feed's `<item>`.
     pub remote_item_guid: Option<String>,
 
     /// Keysend address of the sender.

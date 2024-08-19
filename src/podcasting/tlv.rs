@@ -107,7 +107,7 @@ struct UntrustedRecord {
     /// The Split Kit does weird stuff.
     #[serde(default, rename = "remoteFeedGuid")]
     remote_feed_guid_camelcase: Value,
-    /// Sometimes a payment will be sent to an episode's value block because a different feed referenced it in a <podcast:valueTimeSplit> tag. When that happens, this field will contain the guid of the referencing feed's <item>.
+    /// Sometimes a payment will be sent to an episode's value block because a different feed referenced it in a <podcast:valueTimeSplit> tag. When that happens, this field will contain the guid of the referencing feed's `<item>`.
     #[serde(default)]
     remote_item_guid: Value,
     /// The Split Kit does weird stuff.
@@ -230,7 +230,7 @@ pub struct Record {
     /// Sometimes a payment will be sent to a feed's value block because a different feed referenced it in a <podcast:valueTimeSplit> tag. When that happens, this field will contain the guid of the referencing feed.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub remote_feed_guid: Option<Uuid>,
-    /// Sometimes a payment will be sent to an episode's value block because a different feed referenced it in a <podcast:valueTimeSplit> tag. When that happens, this field will contain the guid of the referencing feed's <item>.
+    /// Sometimes a payment will be sent to an episode's value block because a different feed referenced it in a <podcast:valueTimeSplit> tag. When that happens, this field will contain the guid of the referencing feed's `<item>`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub remote_item_guid: Option<String>,
 
