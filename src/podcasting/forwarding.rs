@@ -86,3 +86,25 @@ pub async fn forward_payments(args: ForwardPaymentArgs<'_>) -> Result<(), Reques
     .await
     .map(|_| ())
 }
+
+/// Ensure forwarded amounts do not exceed a specified aomunt.
+///
+/// Useful for double-checking that the sats forwarded do not exceed the sats received.
+pub fn clip_recipients_at_amount(
+    total_sats: u64,
+    recipients: &[PaymentRecipientInfo],
+) -> Vec<PaymentRecipientInfo> {
+    let mut totals_sats_sent = 0;
+    let mut clipped_recipients = vec![];
+
+    for recipient in recipients {
+        totals_sats_sent += recipient.num_sats;
+        if totals_sats_sent > total_sats {
+            break;
+        }
+
+        clipped_recipients.push(recipient.clone());
+    }
+
+    clipped_recipients
+}
