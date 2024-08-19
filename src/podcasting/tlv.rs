@@ -81,8 +81,8 @@ pub struct UntrustedRecord {
     /// PAYMENT INFO
     ///
     /// Total number of millisats for the payment before any fees are subtracted. This should be the number the listener entered into the app. Preserving this value is important for numerology reasons. Certain numeric values can have significance to the sender and/or receiver, so giving a way to show this is critical.
-    #[serde(default)]
-    value_msat_total: Value,
+    #[serde(default, rename = "value_msat_total")]
+    total_num_millisats: Value,
     /// Text message to add to the payment. When this field is present, the payment is known as a "boostagram".
     #[serde(default)]
     message: Value,
@@ -349,7 +349,7 @@ where
 }
 
 /// Serialize [chrono::Duration] into seconds.
-fn serialize_duration_to_seconds<S>(
+pub fn serialize_duration_to_seconds<S>(
     duration: &Option<Duration>,
     serializer: S,
 ) -> Result<S::Ok, S::Error>
@@ -366,6 +366,30 @@ where
         serializer.serialize_u64(duration.num_seconds() as u64)
     } else {
         serializer.serialize_f64(duration.num_seconds() as f64)
+    }
+}
+
+/// Deserialize seconds into [chrono::Duration].
+pub fn deserialize_seconds<'de, D>(deserializer: D) -> Result<Option<Duration>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let value = match serde::Deserialize::deserialize(deserializer) {
+        Ok(value) => value,
+        Err(_) => return Ok(None),
+    };
+
+    match value {
+        Value::Number(number) => {
+            let seconds = number.as_f64();
+            if let Some(seconds) = seconds {
+                let milliseconds = seconds * 1000.0;
+                Ok(Some(Duration::milliseconds(milliseconds as i64)))
+            } else {
+                Ok(None)
+            }
+        }
+        _ => Ok(None),
     }
 }
 
@@ -396,7 +420,7 @@ impl From<UntrustedRecord> for Record {
             sender_name: json_value_to_string(record.sender_name),
             sender_id: json_value_to_string(record.sender_id),
             receiver_name: json_value_to_string(record.receiver_name),
-            total_num_millisats: json_value_to_u64(record.value_msat_total),
+            total_num_millisats: json_value_to_u64(record.total_num_millisats),
             message: json_value_to_string(record.message),
             boost_link: json_value_to_url(record.boost_link),
             payment_signature: json_value_to_string(record.payment_signature),

@@ -30,7 +30,7 @@ pub enum Action {
 }
 
 /// Information describing a payment recipient.
-#[derive(Debug)]
+#[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
 pub struct PaymentRecipientInfo {
     /// Recipient's keysend address.
     pub address: KeysendAddress,
@@ -45,7 +45,7 @@ pub struct PaymentRecipientInfo {
 }
 
 /// Information describing a boost/stream/auto payment.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
 pub struct PaymentInfo {
     /// ACTION
     pub action: Action,
@@ -73,6 +73,10 @@ pub struct PaymentInfo {
     /// PLAYBACK INFO
     ///
     ///  Timestamp of when the payment was sent as an offset from zero (i.e. - playback position).
+    #[serde(
+        serialize_with = "crate::podcasting::tlv::serialize_duration_to_seconds",
+        deserialize_with = "crate::podcasting::tlv::deserialize_seconds"
+    )]
     pub timestamp: Option<Duration>,
     /// Speed in which the podcast was playing, in decimal notation at the time the payment was sent. So 0.5 is half speed and 2 is double speed.
     pub speed: Option<f64>,
@@ -94,7 +98,7 @@ pub struct PaymentInfo {
     /// PAYMENT INFO
     ///
     /// Total number of sats for the payment before any fees are subtracted. This should be the number the listener entered into the app. Preserving this value is important for numerology reasons. Certain numeric values can have significance to the sender and/or receiver, so giving a way to show this is critical.
-    pub total_num_sats: Option<u64>,
+    pub total_num_sats: u64,
     /// Text message to add to the payment. When this field is present, the payment is known as a "boostagram".
     pub message: Option<String>,
     /// App-specific URL containing route to podcast, episode, and/or timestamp at time of the action. The use case for this is sending a link along with the payment that will take the recipient to the exact playback position within the episode where the payment was sent.
@@ -156,7 +160,7 @@ pub async fn make_payment(args: MakePaymentArgs<'_>) -> Result<MultiKeysendRespo
             sender_name: args.payment_info.sender_name.clone(),
             sender_id: args.payment_info.sender_id.clone(),
             receiver_name: recipient.name.clone(),
-            total_num_millisats: args.payment_info.total_num_sats.map(|sats| sats * 1000),
+            total_num_millisats: Some(args.payment_info.total_num_sats * 1000),
             message: args.payment_info.message.clone(),
             boost_link: args.payment_info.boost_link.clone(),
             payment_signature: recipient.payment_signature.clone(),

@@ -22,6 +22,8 @@ mod svix {
 
 /// Podcasting-related helpers.
 pub mod podcasting {
+    /// Utilities enabling to forward BOLT11 payments to keysend recipients.
+    pub mod forwarding;
     /// Podcasting-related payment utilities.
     pub mod payments;
     /// Utilities related to Podcasting 2.0 TLV records.
