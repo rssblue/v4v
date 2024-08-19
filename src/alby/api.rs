@@ -60,6 +60,10 @@ pub mod invoices {
         pub num_sats: u64,
         /// Arbitary metadata.
         pub metadata: serde_json::Value,
+        /// Arbitrary text (included in the BOLT11 invoice).
+        pub description: Option<String>,
+        /// Name of payer (not included in the BOLT11 invoice)
+        pub payer_name: Option<String>,
     }
 
     /// Request body for [create_invoice].
@@ -70,6 +74,10 @@ pub mod invoices {
         pub num_sats: u64,
         /// Arbitary metadata.
         pub metadata: serde_json::Value,
+        /// Arbitrary text (included in the BOLT11 invoice).
+        pub description: Option<String>,
+        /// Name of payer (not included in the BOLT11 invoice)
+        pub payer_name: Option<String>,
     }
 
     /// Response for a successful invoice creation.
@@ -90,6 +98,8 @@ pub mod invoices {
         let request_body = CreateInvoiceRequestBody {
             num_sats: args.num_sats,
             metadata: args.metadata.clone(),
+            description: args.description.clone(),
+            payer_name: args.payer_name.clone(),
         };
 
         let body = serde_json::to_string(&request_body).map_err(RequestError::ResponseParse)?;

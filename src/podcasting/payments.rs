@@ -30,7 +30,7 @@ pub enum Action {
 }
 
 /// Information describing a payment recipient.
-#[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, serde::Serialize, serde::Deserialize, Clone)]
 pub struct PaymentRecipientInfo {
     /// Recipient's keysend address.
     pub address: KeysendAddress,
@@ -45,7 +45,7 @@ pub struct PaymentRecipientInfo {
 }
 
 /// Information describing a boost/stream/auto payment.
-#[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, serde::Serialize, serde::Deserialize, Clone)]
 pub struct PaymentInfo {
     /// ACTION
     pub action: Action,

@@ -45,7 +45,7 @@ pub async fn create_invoice(
 
     let metadata_value = serde_json::json!(CreateInvoiceMetadata {
         forwarding_data: CreateInvoiceMetadataForwardingStruct {
-            payment_info: args.payment_info,
+            payment_info: args.payment_info.clone(),
             recipients: args.recipients,
         },
     });
@@ -55,6 +55,8 @@ pub async fn create_invoice(
         token: args.token,
         num_sats: total_sats,
         metadata: metadata_value,
+        description: args.payment_info.message.clone(),
+        payer_name: args.payment_info.sender_name.clone(),
     };
 
     crate::alby::api::invoices::create_invoice(invoice_args).await

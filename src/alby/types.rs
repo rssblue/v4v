@@ -1,5 +1,5 @@
 /// Keysend address.
-#[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Default, serde::Serialize, serde::Deserialize, Clone)]
 pub struct KeysendAddress {
     /// Node's public key.
     pub pubkey: String,
