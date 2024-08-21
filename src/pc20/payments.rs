@@ -37,7 +37,7 @@ pub struct PaymentRecipientInfo {
     /// Number of sats to send.
     pub num_sats: u64,
     /// UUID of a payment sent out to a single recipient.
-    pub payment_id: Option<String>,
+    pub payment_id: Option<Uuid>,
     /// Optionally, this field can contain a signature for the payment, to be able to verify that the user who sent it is actually who they claim in the sender_id field. If the sender_id contains a Nostr public key, this field should contain a Nostr sig value as a 64-byte encoded hex string. For the purpose of generating the Nostr signature, the following data should be serialized: [0,sender_id,ts,1,[],message] to conform to the NIP-01 specification. The resulting serialized string should be hashed with sha256 to obtain the value.
     pub payment_signature: Option<String>,
     /// Recipient's name.
@@ -104,7 +104,7 @@ pub struct PaymentInfo {
     /// App-specific URL containing route to podcast, episode, and/or timestamp at time of the action. The use case for this is sending a link along with the payment that will take the recipient to the exact playback position within the episode where the payment was sent.
     pub boost_link: Option<Url>,
     /// UUID for the boost/stream/auto payment. If there are several recipients, the same identifier should be sent to all of them.
-    pub boost_id: Option<String>,
+    pub boost_id: Option<Uuid>,
 
     /// REMOTE INFO
     ///
@@ -164,8 +164,8 @@ pub async fn make_payment(args: MakePaymentArgs<'_>) -> Result<MultiKeysendRespo
             message: args.payment_info.message.clone(),
             boost_link: args.payment_info.boost_link.clone(),
             payment_signature: recipient.payment_signature.clone(),
-            payment_id: recipient.payment_id.clone(),
-            boost_id: args.payment_info.boost_id.clone(),
+            payment_id: recipient.payment_id,
+            boost_id: args.payment_info.boost_id,
             remote_feed_guid: args.payment_info.remote_feed_guid,
             remote_item_guid: args.payment_info.remote_item_guid.clone(),
             reply_address: args

@@ -220,10 +220,10 @@ pub struct Record {
     pub payment_signature: Option<String>,
     /// UUID of a payment sent out to a single recipient.
     #[serde(rename = "uuid", skip_serializing_if = "Option::is_none")]
-    pub payment_id: Option<String>,
+    pub payment_id: Option<Uuid>,
     /// UUID for the boost/stream/auto payment. If there are several recipients, the same identifier should be sent to all of them.
     #[serde(rename = "boost_uuid", skip_serializing_if = "Option::is_none")]
-    pub boost_id: Option<String>,
+    pub boost_id: Option<Uuid>,
 
     /// REMOTE INFO
     ///
@@ -424,8 +424,8 @@ impl From<UntrustedRecord> for Record {
             message: json_value_to_string(record.message),
             boost_link: json_value_to_url(record.boost_link),
             payment_signature: json_value_to_string(record.payment_signature),
-            payment_id: json_value_to_string(record.payment_id),
-            boost_id: json_value_to_string(record.boost_id),
+            payment_id: json_value_to_uuid(record.payment_id),
+            boost_id: json_value_to_uuid(record.boost_id),
             remote_feed_guid: match (
                 json_value_to_uuid(record.remote_feed_guid),
                 json_value_to_uuid(record.remote_feed_guid_camelcase),
