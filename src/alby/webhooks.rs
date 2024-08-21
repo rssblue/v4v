@@ -52,7 +52,7 @@ pub fn verify_signature<HM: HeaderMap>(
 }
 
 /// Alby invoice obtained via webhook request.
-#[derive(Debug, serde::Deserialize)]
+#[derive(Debug, serde::Deserialize, Clone)]
 pub struct AlbyInvoice {
     /// 24 alphanumeric characters
     pub identifier: String,

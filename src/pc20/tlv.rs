@@ -128,7 +128,7 @@ struct UntrustedRecord {
 }
 
 /// Well-formed bLIP-10 TLV record.
-#[derive(Debug, serde::Serialize)]
+#[derive(Debug, serde::Serialize, Clone)]
 pub struct Record {
     /// ACTION
     pub action: Action,
