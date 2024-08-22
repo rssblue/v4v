@@ -264,7 +264,7 @@ pub mod payments {
         let request_args = RequestArgs {
             user_agent: args.user_agent,
             method: reqwest::Method::POST,
-            url: "https://api.getalby.com/payments/multi",
+            url: "https://api.getalby.com/payments/keysend/multi",
             token: args.token,
             body: Some(&body),
         };
