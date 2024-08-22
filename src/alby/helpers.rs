@@ -144,7 +144,9 @@ pub async fn make_request<T: DeserializeOwned>(args: RequestArgs<'_>) -> Result<
     println!("{}", body);
 
     match status.as_u16() {
-        200 => Ok(serde_json::from_str(&body).map_err(|e| RequestError::ResponseParse(e, body))?),
+        200..299 => {
+            Ok(serde_json::from_str(&body).map_err(|e| RequestError::ResponseParse(e, body))?)
+        }
         400 => {
             let error_response: ErrorResponse = serde_json::from_str(&body)
                 .map_err(|e| RequestError::ResponseParse(e, body.clone()))?;
