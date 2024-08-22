@@ -120,6 +120,12 @@ pub async fn make_request<T: DeserializeOwned>(args: RequestArgs<'_>) -> Result<
         reqwest::header::AUTHORIZATION,
         reqwest::header::HeaderValue::from_str(&format!("Bearer {}", args.token))?,
     );
+    if args.body.is_some() {
+        headers.insert(
+            reqwest::header::CONTENT_TYPE,
+            reqwest::header::HeaderValue::from_static("application/json"),
+        );
+    }
 
     let client = reqwest::Client::builder()
         .default_headers(headers)
