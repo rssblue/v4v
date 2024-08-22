@@ -102,7 +102,8 @@ pub mod invoices {
             payer_name: args.payer_name.clone(),
         };
 
-        let body = serde_json::to_string(&request_body).map_err(RequestError::ResponseParse)?;
+        let body = serde_json::to_string(&request_body)
+            .map_err(|e| RequestError::Unexpected(e.to_string()))?;
 
         let request_args = RequestArgs {
             user_agent: args.user_agent,
@@ -182,7 +183,8 @@ pub mod payments {
             custom_records: args.custom_records.clone(),
         };
 
-        let body = serde_json::to_string(&request_body).map_err(RequestError::ResponseParse)?;
+        let body = serde_json::to_string(&request_body)
+            .map_err(|e| RequestError::Unexpected(e.to_string()))?;
 
         let request_args = RequestArgs {
             user_agent: args.user_agent,
@@ -256,7 +258,8 @@ pub mod payments {
 
         let request_body = MultiKeysendRequest { keysends };
 
-        let body = serde_json::to_string(&request_body).map_err(RequestError::ResponseParse)?;
+        let body = serde_json::to_string(&request_body)
+            .map_err(|e| RequestError::Unexpected(e.to_string()))?;
 
         let request_args = RequestArgs {
             user_agent: args.user_agent,

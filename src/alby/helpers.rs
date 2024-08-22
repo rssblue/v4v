@@ -26,7 +26,7 @@ pub enum RequestError {
     /// Failed to read response body.
     ResponseBodyRead(reqwest::Error),
     /// Failed to parse response body.
-    ResponseParse(serde_json::Error),
+    ResponseParse(serde_json::Error, String),
     /// Bad request (400).
     BadRequest(ErrorResponse),
     /// Internal server error (500).
@@ -48,7 +48,9 @@ impl fmt::Display for RequestError {
             RequestError::ClientCreation(e) => write!(f, "Failed to create reqwest client: {}", e),
             RequestError::RequestSend(e) => write!(f, "Failed to send request: {}", e),
             RequestError::ResponseBodyRead(e) => write!(f, "Failed to read response body: {}", e),
-            RequestError::ResponseParse(e) => write!(f, "Failed to parse response body: {}", e),
+            RequestError::ResponseParse(e, body) => {
+                write!(f, "Failed to parse response body ({}): {}", body, e)
+            }
             RequestError::BadRequest(e) => {
                 write!(f, "Bad request (400): {} (code: {})", e.message, e.code)
             }
@@ -72,7 +74,7 @@ impl std::error::Error for RequestError {
             RequestError::ClientCreation(e) => Some(e),
             RequestError::RequestSend(e) => Some(e),
             RequestError::ResponseBodyRead(e) => Some(e),
-            RequestError::ResponseParse(e) => Some(e),
+            RequestError::ResponseParse(e, _body) => Some(e),
             RequestError::BadRequest(_)
             | RequestError::InternalServerError(_)
             | RequestError::UnexpectedStatus { .. } => None,
@@ -95,12 +97,6 @@ impl From<reqwest::Error> for RequestError {
         } else {
             RequestError::ResponseBodyRead(error)
         }
-    }
-}
-
-impl From<serde_json::Error> for RequestError {
-    fn from(error: serde_json::Error) -> Self {
-        RequestError::ResponseParse(error)
     }
 }
 
@@ -139,15 +135,18 @@ pub async fn make_request<T: DeserializeOwned>(args: RequestArgs<'_>) -> Result<
 
     let status = response.status();
     let body = response.text().await?;
+    println!("{}", body);
 
     match status.as_u16() {
-        200 => Ok(serde_json::from_str(&body)?),
+        200 => Ok(serde_json::from_str(&body).map_err(|e| RequestError::ResponseParse(e, body))?),
         400 => {
-            let error_response: ErrorResponse = serde_json::from_str(&body)?;
+            let error_response: ErrorResponse = serde_json::from_str(&body)
+                .map_err(|e| RequestError::ResponseParse(e, body.clone()))?;
             Err(RequestError::BadRequest(error_response))
         }
         500 => {
-            let error_response: ErrorResponse = serde_json::from_str(&body)?;
+            let error_response: ErrorResponse = serde_json::from_str(&body)
+                .map_err(|e| RequestError::ResponseParse(e, body.clone()))?;
             Err(RequestError::InternalServerError(error_response))
         }
         _ => Err(RequestError::UnexpectedStatus { status, body }),
