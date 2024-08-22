@@ -113,9 +113,9 @@ pub mod pc20 {
     ///     let payment_info = metadata.forwarding_data.payment_info;
     ///     let recipients = metadata.forwarding_data.recipients;
     ///     // Trim if the sum of payments somehow exceeds the total amount received.
-    ///     let recipients = v4v::clip_recipients_at_amount(&recipients, alby_invoice.num_sats);
+    ///     let recipients = v4v::pc20::forwarding::clip_recipients_at_amount(alby_invoice.num_sats, &recipients);
     ///
-    ///     match v4v::forward_payments(v4v::pc20::forwarding::ForwardPaymentArgs {
+    ///     match v4v::pc20::forwarding::forward_payments(v4v::pc20::forwarding::ForwardPaymentArgs {
     ///         user_agent: USER_AGENT,
     ///         token: ALBY_TOKEN,
     ///         payment_info,
