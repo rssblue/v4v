@@ -22,16 +22,19 @@ pub struct CreateInvoiceArgs<'a> {
     pub recipients: Vec<PaymentRecipientInfo>,
 }
 
+/// Metadata fields for sat forwarding service using Alby API.
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
-struct CreateInvoiceMetadataForwardingStruct {
+pub struct CreateInvoiceMetadataForwardingStruct {
     /// Payment information.
     pub payment_info: PaymentInfo,
     /// Recipients' information.
     pub recipients: Vec<PaymentRecipientInfo>,
 }
 
+/// Metadata for sat forwarding service using Alby API.
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
-struct CreateInvoiceMetadata {
+pub struct CreateInvoiceMetadata {
+    /// Forwarding data.
     pub forwarding_data: CreateInvoiceMetadataForwardingStruct,
 }
 
