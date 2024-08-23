@@ -96,6 +96,11 @@ compute_sat_recipients_tests! {
         total_sats: 56,
         expected_sats: vec![1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     },
+    case_16: TestCase {
+        splits: vec![0, 0, 0, 0, 0],
+        total_sats: 6,
+        expected_sats: vec![2, 1, 1, 1, 1],
+    },
 }
 
 macro_rules! compute_sat_recipients_generic_tests {

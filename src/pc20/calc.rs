@@ -54,11 +54,13 @@ pub fn compute_sat_recipients(splits: &[u64], total_sats: u64) -> Vec<u64> {
         remaining_sats -= 1;
     }
 
-    if remaining_sats > 0 && total_split > 0 {
+    if remaining_sats > 0 {
         // Distribute remaining sats based on split ratios
-        for &(index, split) in indexed_splits.iter() {
-            let share = (split as u128 * remaining_sats as u128) / total_split as u128;
-            sat_amounts[index] += share as u64;
+        if total_split > 0 {
+            for &(index, split) in indexed_splits.iter() {
+                let share = (split as u128 * remaining_sats as u128) / total_split as u128;
+                sat_amounts[index] += share as u64;
+            }
         }
 
         // Distribute any leftover sats to recipients with the highest splits
