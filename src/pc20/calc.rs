@@ -33,8 +33,8 @@ pub fn compute_sat_recipients(splits: &[u64], total_sats: u64) -> Vec<u64> {
     let num_recipients = splits.len();
     let total_split: u128 = splits.iter().map(|&x| x as u128).sum();
 
-    if total_sats == 0 || num_recipients == 0 {
-        return vec![0; num_recipients];
+    if splits.is_empty() {
+        return vec![];
     }
 
     // Create a vector of (index, split) pairs and sort it by split in descending order
@@ -82,9 +82,10 @@ pub fn compute_sat_recipients(splits: &[u64], total_sats: u64) -> Vec<u64> {
     }
 
     // Redundant check to make sure we are distributing the initial amount:
-    if sat_amounts.iter().map(|&x| x as u128).sum::<u128>() != total_sats as u128 {
+    let sum = sat_amounts.iter().map(|&x| x as u128).sum::<u128>();
+    if sum != total_sats as u128 {
         panic!(
-            "Distributed sats != total sats (splits = {splits:?}, sat_amounts = {sat_amounts:?})"
+            "Distributed sats != total sats (splits = {splits:?}, sat_amounts = {sat_amounts:?}, total_sats = {total_sats}, sum = {sum})",
         );
     }
 
