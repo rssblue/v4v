@@ -30,45 +30,47 @@
 /// assert_eq!(v4v::pc20::calc::compute_sat_recipients(&splits, total_sats), vec![0, 1]);
 /// ```
 pub fn compute_sat_recipients(splits: &[u64], total_sats: u64) -> Vec<u64> {
+    let num_recipients = splits.len();
     let total_split: u64 = splits.iter().sum();
 
-    let mut sat_amounts: Vec<u64> = splits
-        .iter()
-        .map(|&split| {
-            if total_split == 0 {
-                0
-            } else {
-                split * total_sats / total_split
-            }
-        })
-        .collect();
+    if total_sats == 0 || num_recipients == 0 {
+        return vec![0; num_recipients];
+    }
 
-    let distributed_sats: u64 = sat_amounts.iter().sum();
-    let mut remaining_sats = total_sats - distributed_sats;
+    // Create a vector of (index, split) pairs and sort it by split in descending order
+    let mut indexed_splits: Vec<(usize, u64)> =
+        splits.iter().enumerate().map(|(i, &s)| (i, s)).collect();
+    indexed_splits.sort_unstable_by(|a, b| b.1.cmp(&a.1));
 
-    if remaining_sats > 0 {
-        // Create a vector of indices, sorted by split amount in descending order
-        let mut indices: Vec<usize> = (0..splits.len()).collect();
-        indices.sort_unstable_by(|&a, &b| splits[b].cmp(&splits[a]));
+    let mut sat_amounts: Vec<u64> = vec![0; num_recipients];
+    let mut remaining_sats = total_sats;
 
-        // First pass: distribute to recipients with 0 sats, prioritizing higher splits
-        for &i in &indices {
-            if remaining_sats == 0 {
-                break;
-            }
-            if sat_amounts[i] == 0 {
-                sat_amounts[i] += 1;
-                remaining_sats -= 1;
-            }
+    // First, give one sat to as many recipients as possible, prioritizing higher splits
+    for &(index, _) in indexed_splits.iter() {
+        if remaining_sats == 0 {
+            break;
+        }
+        sat_amounts[index] = 1;
+        remaining_sats -= 1;
+    }
+
+    if remaining_sats > 0 && total_split > 0 {
+        // Distribute remaining sats based on split ratios
+        for &(index, split) in indexed_splits.iter() {
+            let share = (split as u128 * remaining_sats as u128) / total_split as u128;
+            sat_amounts[index] += share as u64;
         }
 
-        // Second pass: distribute remaining sats to all recipients, still prioritizing higher splits
-        while remaining_sats > 0 {
-            for &i in &indices {
+        // Distribute any leftover sats to recipients with the highest splits
+        let distributed_sats: u64 = sat_amounts.iter().sum();
+        remaining_sats = total_sats - distributed_sats;
+
+        if remaining_sats > 0 {
+            for &(index, _) in indexed_splits.iter() {
                 if remaining_sats == 0 {
                     break;
                 }
-                sat_amounts[i] += 1;
+                sat_amounts[index] += 1;
                 remaining_sats -= 1;
             }
         }
@@ -76,7 +78,9 @@ pub fn compute_sat_recipients(splits: &[u64], total_sats: u64) -> Vec<u64> {
 
     // Redundant check to make sure we are distributing the initial amount:
     if sat_amounts.iter().sum::<u64>() != total_sats {
-        panic!("Distributed sats ({distributed_sats}) != total sats ({total_sats}) (splits = {splits:?}, sat_amounts = {sat_amounts:?})");
+        panic!(
+            "Distributed sats != total sats (splits = {splits:?}, sat_amounts = {sat_amounts:?})"
+        );
     }
 
     sat_amounts
