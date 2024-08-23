@@ -10,7 +10,7 @@ Check out [docs.rs](https://docs.rs/v4v) for all available functions.
 ## Example
 
 ```rust
-let splits = vec![1, 99, 1];
+let splits = vec![1, 98, 1];
 let total_sats = 10;
 // The crate ensures that
 // - even after rounding, the total number of sats is preserved

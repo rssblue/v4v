@@ -1,7 +1,7 @@
 [package]
 authors = ["RSS Blue", "Dovydas Joksas"]
 name = "v4v"
-version = "0.5.12"
+version = "0.5.13"
 edition = "2021"
 description = "Value-for-value helper utilities for Podcasting 2.0"
 license = "MIT OR Apache-2.0"
