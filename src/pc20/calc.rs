@@ -31,19 +31,22 @@
 /// ```
 pub fn compute_sat_recipients(splits: &[u64], total_sats: u64) -> Vec<u64> {
     let num_recipients = splits.len();
-    let total_split: u64 = splits.iter().sum();
+    let total_split: u128 = splits.iter().map(|&x| x as u128).sum();
 
     if total_sats == 0 || num_recipients == 0 {
         return vec![0; num_recipients];
     }
 
     // Create a vector of (index, split) pairs and sort it by split in descending order
-    let mut indexed_splits: Vec<(usize, u64)> =
-        splits.iter().enumerate().map(|(i, &s)| (i, s)).collect();
+    let mut indexed_splits: Vec<(usize, u128)> = splits
+        .iter()
+        .enumerate()
+        .map(|(i, &s)| (i, s as u128))
+        .collect();
     indexed_splits.sort_unstable_by(|a, b| b.1.cmp(&a.1));
 
     let mut sat_amounts: Vec<u64> = vec![0; num_recipients];
-    let mut remaining_sats = total_sats;
+    let mut remaining_sats: u128 = total_sats as u128;
 
     // First, give one sat to as many recipients as possible, prioritizing higher splits
     for &(index, _) in indexed_splits.iter() {
@@ -58,14 +61,14 @@ pub fn compute_sat_recipients(splits: &[u64], total_sats: u64) -> Vec<u64> {
         // Distribute remaining sats based on split ratios
         if total_split > 0 {
             for &(index, split) in indexed_splits.iter() {
-                let share = (split as u128 * remaining_sats as u128) / total_split as u128;
+                let share = (split * remaining_sats) / total_split;
                 sat_amounts[index] += share as u64;
             }
         }
 
         // Distribute any leftover sats to recipients with the highest splits
-        let distributed_sats: u64 = sat_amounts.iter().sum();
-        remaining_sats = total_sats - distributed_sats;
+        let distributed_sats: u128 = sat_amounts.iter().map(|&x| x as u128).sum();
+        remaining_sats = total_sats as u128 - distributed_sats;
 
         if remaining_sats > 0 {
             for &(index, _) in indexed_splits.iter() {
@@ -79,7 +82,7 @@ pub fn compute_sat_recipients(splits: &[u64], total_sats: u64) -> Vec<u64> {
     }
 
     // Redundant check to make sure we are distributing the initial amount:
-    if sat_amounts.iter().sum::<u64>() != total_sats {
+    if sat_amounts.iter().map(|&x| x as u128).sum::<u128>() != total_sats as u128 {
         panic!(
             "Distributed sats != total sats (splits = {splits:?}, sat_amounts = {sat_amounts:?})"
         );
