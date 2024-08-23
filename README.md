@@ -10,12 +10,12 @@ Check out [docs.rs](https://docs.rs/v4v) for all available functions.
 ## Example
 
 ```rust
-let splits = vec![1, 99];
+let splits = vec![1, 99, 1];
 let total_sats = 10;
 // The crate ensures that
 // - even after rounding, the total number of sats is preserved
 // - if possible, everyone gets at least 1 sat (and thus their own TLV record)
-assert_eq!(v4v::pc20::calc::compute_sat_recipients(&splits, total_sats), vec![1, 9]);
+assert_eq!(v4v::pc20::calc::compute_sat_recipients(&splits, total_sats), vec![1, 8, 1]);
 ```
 
 ## Install
