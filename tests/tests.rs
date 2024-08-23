@@ -351,6 +351,36 @@ fee_recipients_to_splits_tests! {
         ],
         expected_splits: Ok(vec![0, 0]),
     },
+    case_19: TestCase {
+        recipients: vec![
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: u64::MAX },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: u64::MAX },
+        ],
+        expected_splits: Ok(vec![1, 1]),
+    },
+    case_20: TestCase {
+        recipients: vec![
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: u64::MAX },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 1 },
+        ],
+        expected_splits: Ok(vec![u64::MAX, 1]),
+    },
+    case_21: TestCase {
+        recipients: vec![
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: u64::MAX },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 1 },
+        ],
+        expected_splits: Ok(vec![99, 1]),
+    },
+    case_22: TestCase {
+        recipients: vec![
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: u64::MAX },
+            v4v::pc20::calc::GenericRecipient::ShareBased { num_shares: 1 },
+            v4v::pc20::calc::GenericRecipient::PercentageBased { percentage: 1 },
+        ],
+        // Third recipient is *approximately* 1% of the total.
+        expected_splits: Ok(vec![u64::MAX, 1, u64::MAX/99+16]),
+    },
 }
 
 macro_rules! fee_recipients_to_splits_generic_tests {

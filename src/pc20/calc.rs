@@ -113,7 +113,7 @@ pub enum GenericRecipient {
 }
 
 /// Calculates the greatest common divisor of two numbers.
-fn gcd(a: u64, b: u64) -> u64 {
+fn gcd(a: u128, b: u128) -> u128 {
     if b == 0 {
         a
     } else {
@@ -166,10 +166,10 @@ impl std::fmt::Debug for RecipientsToSplitsError {
 pub fn fee_recipients_to_splits(
     recipients: &[GenericRecipient],
 ) -> Result<Vec<u64>, RecipientsToSplitsError> {
-    let total_percentage: u64 = recipients
+    let total_percentage: u128 = recipients
         .iter()
         .filter_map(|r| match r {
-            GenericRecipient::PercentageBased { percentage } => Some(*percentage),
+            GenericRecipient::PercentageBased { percentage } => Some(*percentage as u128),
             _ => None,
         })
         .sum();
@@ -187,11 +187,11 @@ pub fn fee_recipients_to_splits(
         return Err(RecipientsToSplitsError::FeeIs100ButNonFeeRecipientsExist);
     }
 
-    let remaining_percentage = 100 - total_percentage;
-    let total_shares: u64 = share_recipients
+    let remaining_percentage: u128 = 100 - total_percentage;
+    let total_shares: u128 = share_recipients
         .iter()
         .filter_map(|r| match r {
-            GenericRecipient::ShareBased { num_shares } => Some(*num_shares),
+            GenericRecipient::ShareBased { num_shares } => Some(*num_shares as u128),
             _ => None,
         })
         .sum();
@@ -201,14 +201,16 @@ pub fn fee_recipients_to_splits(
     for recipient in recipients {
         match recipient {
             GenericRecipient::ShareBased { num_shares } => {
-                result.push(num_shares * remaining_percentage);
+                let value = (*num_shares as u128) * remaining_percentage;
+                result.push(value);
             }
             GenericRecipient::PercentageBased { percentage } => {
-                if share_recipients.is_empty() {
-                    result.push(*percentage);
+                let value = if share_recipients.is_empty() {
+                    *percentage as u128
                 } else {
-                    result.push(*percentage * total_shares);
-                }
+                    (*percentage as u128) * total_shares
+                };
+                result.push(value);
             }
         }
     }
@@ -217,7 +219,8 @@ pub fn fee_recipients_to_splits(
     let gcd_value = result
         .iter()
         .filter(|&&x| x != 0)
-        .fold(0, |acc, &x| gcd(acc, x));
+        .fold(0u128, |acc, &x| gcd(acc, x));
+
     if gcd_value > 1 {
         result = result
             .into_iter()
@@ -225,7 +228,17 @@ pub fn fee_recipients_to_splits(
             .collect();
     }
 
-    Ok(result)
+    // Convert result back to u64, scaling all values proportionally if any overflow occurs
+    let max_value = *result.iter().max().unwrap_or(&0);
+    if max_value > u64::MAX as u128 {
+        let scale_factor = (u64::MAX as f64) / (max_value as f64);
+        Ok(result
+            .into_iter()
+            .map(|x| (x as f64 * scale_factor).round() as u64)
+            .collect())
+    } else {
+        Ok(result.into_iter().map(|x| x as u64).collect())
+    }
 }
 
 /// Similar to [fee_recipients_to_splits] but allows to use it with any type that uses splits and
@@ -265,12 +278,12 @@ pub fn use_remote_splits(
     remote_percentage: u64,
 ) -> (Vec<u64>, Vec<u64>) {
     // Cap remote_percentage at 100
-    let remote_percentage = remote_percentage.min(100);
-    let local_percentage = 100 - remote_percentage;
+    let remote_percentage = remote_percentage.min(100) as u128;
+    let local_percentage = 100u128 - remote_percentage;
 
     // Calculate total splits
-    let total_local: u64 = local_splits.iter().sum();
-    let total_remote: u64 = remote_splits.iter().sum();
+    let total_local: u128 = local_splits.iter().map(|&x| x as u128).sum();
+    let total_remote: u128 = remote_splits.iter().map(|&x| x as u128).sum();
 
     // If either total is 0, we need to handle this specially
     if total_local == 0 || total_remote == 0 {
@@ -282,46 +295,58 @@ pub fn use_remote_splits(
         let gcd_value = all_values
             .iter()
             .filter(|&&x| x != 0)
-            .fold(0, |acc, &x| gcd(acc, x));
+            .fold(0u128, |acc, &x| gcd(acc, x as u128));
         let new_local_splits = local_splits
             .iter()
-            .map(|x| if *x == 0 { 0 } else { x / gcd_value })
+            .map(|&x| {
+                if x == 0 {
+                    0
+                } else {
+                    (x as u128 / gcd_value) as u64
+                }
+            })
             .collect();
         let new_remote_splits = remote_splits
             .iter()
-            .map(|x| if *x == 0 { 0 } else { x / gcd_value })
+            .map(|&x| {
+                if x == 0 {
+                    0
+                } else {
+                    (x as u128 / gcd_value) as u64
+                }
+            })
             .collect();
         return (new_local_splits, new_remote_splits);
     }
 
     // Scale splits without division
-    let scaled_local: Vec<u64> = local_splits
+    let scaled_local: Vec<u128> = local_splits
         .iter()
-        .map(|&split| split * local_percentage * total_remote)
+        .map(|&split| (split as u128) * local_percentage * total_remote)
         .collect();
 
-    let scaled_remote: Vec<u64> = remote_splits
+    let scaled_remote: Vec<u128> = remote_splits
         .iter()
-        .map(|&split| split * remote_percentage * total_local)
+        .map(|&split| (split as u128) * remote_percentage * total_local)
         .collect();
 
     // Combine all values to find the overall GCD
     let mut all_values = scaled_local.clone();
-    all_values.extend(scaled_remote.iter());
+    all_values.extend(scaled_remote.iter().cloned());
 
     let gcd_value = all_values
         .iter()
         .filter(|&&x| x != 0)
-        .fold(0, |acc, &x| gcd(acc, x));
+        .fold(0u128, |acc, &x| gcd(acc, x));
 
     // Simplify the results using the GCD
-    let final_local = scaled_local
+    let final_local: Vec<u64> = scaled_local
         .into_iter()
-        .map(|x| if x == 0 { 0 } else { x / gcd_value })
+        .map(|x| if x == 0 { 0 } else { (x / gcd_value) as u64 })
         .collect();
-    let final_remote = scaled_remote
+    let final_remote: Vec<u64> = scaled_remote
         .into_iter()
-        .map(|x| if x == 0 { 0 } else { x / gcd_value })
+        .map(|x| if x == 0 { 0 } else { (x / gcd_value) as u64 })
         .collect();
 
     (final_local, final_remote)
