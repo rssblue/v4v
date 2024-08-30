@@ -115,9 +115,6 @@ pub struct PaymentInfo {
 
     /// Keysend address of the sender.
     pub reply_address: Option<KeysendAddress>,
-
-    /// Recipients.
-    pub recipients: Vec<PaymentRecipientInfo>,
 }
 
 /// Arguments for [make_payment].
