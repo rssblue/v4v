@@ -37,7 +37,16 @@ pub fn compute_sat_recipients(splits: &[u64], total_sats: u64) -> Vec<u64> {
         return vec![];
     }
 
-    // Create a vector of (index, split) pairs and sort it by split in descending order
+    // Check if all splits are non-zero and total_sats is a multiple of total_split
+    if !splits.contains(&0) && (total_sats as u128 % total_split == 0) {
+        // Distribute sats proportionally
+        return splits
+            .iter()
+            .map(|&split| (split as u128 * total_sats as u128 / total_split) as u64)
+            .collect();
+    }
+
+    // Original logic for other cases
     let mut indexed_splits: Vec<(usize, u128)> = splits
         .iter()
         .enumerate()
