@@ -16,7 +16,7 @@ use super::tlv::Record;
 
 /// Action for Podcasting 2.0 payment.
 #[derive(
-    Debug, Default, serde::Deserialize, PartialEq, Clone, serde::Serialize, strum_macros::Display,
+    Debug, Default, serde::Deserialize, PartialEq, Clone, serde::Serialize, strum::Display,
 )]
 #[serde(rename_all = "lowercase")]
 pub enum Action {

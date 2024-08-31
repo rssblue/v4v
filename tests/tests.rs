@@ -171,6 +171,21 @@ compute_sat_recipients_tests! {
         total_sats: u64::MAX,
         expected_sats: vec![u64::MAX],
     },
+    case_31: TestCase {
+        splits: vec![50, 40, 3, 2, 2, 0, 2],
+        total_sats: 100,
+        expected_sats: vec![50, 40, 3, 2, 2, 1, 2],
+    },
+    case_32: TestCase {
+        splits: vec![50, 50, 0, 0, 0, 0, 0],
+        total_sats: 100,
+        expected_sats: vec![48, 47, 1, 1, 1, 1, 1],
+    },
+    case_33: TestCase {
+        splits: vec![50, 50, 0, 0, 0, 0, 0],
+        total_sats: 101,
+        expected_sats: vec![48, 48, 1, 1, 1, 1, 1],
+    },
 }
 
 macro_rules! compute_sat_recipients_generic_tests {
