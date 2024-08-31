@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 /// Distributes [satoshis (sats)](https://en.wikipedia.org/wiki/Bitcoin#Units_and_divisibility) to
 /// a list of recipients based on their splits.
 ///
@@ -31,61 +33,124 @@
 /// ```
 pub fn compute_sat_recipients(splits: &[u64], total_sats: u64) -> Vec<u64> {
     let num_recipients = splits.len();
+
+    if splits.is_empty() || total_sats == 0 {
+        return vec![0; num_recipients];
+    }
+
+    // Use u128 for calculations to avoid overflow
     let total_split: u128 = splits.iter().map(|&x| x as u128).sum();
 
-    if splits.is_empty() {
-        return vec![];
+    if total_split == 0 {
+        // If all splits are zero, distribute evenly
+        let base_amount = total_sats / num_recipients as u64;
+        let remainder = total_sats % num_recipients as u64;
+        let mut result = vec![base_amount; num_recipients];
+        for result_item in result.iter_mut().take(remainder as usize) {
+            *result_item += 1;
+        }
+        return result;
     }
 
-    // Check if all splits are non-zero and total_sats is a multiple of total_split
-    if !splits.contains(&0) && (total_sats as u128 % total_split == 0) {
-        // Distribute sats proportionally
-        return splits
-            .iter()
-            .map(|&split| (split as u128 * total_sats as u128 / total_split) as u64)
-            .collect();
+    // Distribute sats proportionally
+    let mut sat_amounts: Vec<u64> = splits
+        .iter()
+        .map(|&split| ((split as u128 * total_sats as u128) / total_split) as u64)
+        .collect();
+
+    // Give one sat to everyone who doesn't have it:
+    for amount in sat_amounts.iter_mut() {
+        if *amount == 0 {
+            *amount = 1;
+        }
     }
 
-    // Original logic for other cases
+    let mut balance: i64 = total_sats as i64 - sat_amounts.iter().sum::<u64>() as i64;
+
+    // Create a vector of (index, split) pairs
     let mut indexed_splits: Vec<(usize, u128)> = splits
         .iter()
+        .cloned()
         .enumerate()
-        .map(|(i, &s)| (i, s as u128))
+        .map(|(i, s)| (i, s as u128))
         .collect();
-    indexed_splits.sort_unstable_by(|a, b| b.1.cmp(&a.1));
 
-    let mut sat_amounts: Vec<u64> = vec![0; num_recipients];
-    let mut remaining_sats: u128 = total_sats as u128;
+    // Using cmp
+    match balance.cmp(&0) {
+        Ordering::Less => {
+            // Sort by increasing splits, then by decreasing index.
+            indexed_splits.sort_by(|&(i1, s1), &(i2, s2)| s1.cmp(&s2).then(i2.cmp(&i1)));
 
-    // First, give one sat to as many recipients as possible, prioritizing higher splits
-    for &(index, _) in indexed_splits.iter() {
-        if remaining_sats == 0 {
-            break;
-        }
-        sat_amounts[index] = 1;
-        remaining_sats -= 1;
-    }
+            let initial_balance = balance;
 
-    if remaining_sats > 0 {
-        // Distribute remaining sats based on split ratios
-        if total_split > 0 {
-            for &(index, split) in indexed_splits.iter() {
-                let share = (split * remaining_sats) / total_split;
-                sat_amounts[index] += share as u64;
-            }
-        }
-
-        // Distribute any leftover sats to recipients with the highest splits
-        let distributed_sats: u128 = sat_amounts.iter().map(|&x| x as u128).sum();
-        remaining_sats = total_sats as u128 - distributed_sats;
-
-        if remaining_sats > 0 {
-            for &(index, _) in indexed_splits.iter() {
-                if remaining_sats == 0 {
+            // First iteration: Remove from those that have at least two sats.
+            for &(index, split) in &indexed_splits {
+                if balance < 0 && sat_amounts[index] > 1 {
+                    // Remove amount proportional to the split.
+                    let amount_to_remove =
+                        (split * initial_balance.unsigned_abs() as u128 / total_split).max(1);
+                    sat_amounts[index] -= amount_to_remove as u64;
+                    balance += amount_to_remove as i64;
+                }
+                if balance == 0 {
                     break;
                 }
-                sat_amounts[index] += 1;
-                remaining_sats -= 1;
+            }
+
+            if balance < 0 {
+                let mut indexed_splits_with_amounts: Vec<(usize, u128, u64)> = indexed_splits
+                    .iter()
+                    .map(|&(index, split)| (index, split, sat_amounts[index]))
+                    .collect();
+
+                // Remove in the following order:
+                // 1) increasing split for recipients with at least two sats
+                // 2) increasing split for recipients with at least one sat
+                // 3) decreasing index
+                indexed_splits_with_amounts.sort_by(|&(i1, s1, a1), &(i2, s2, a2)| {
+                    match (a1 >= 2, a2 >= 2) {
+                        (true, true) => s1.cmp(&s2),
+                        (true, false) => std::cmp::Ordering::Less,
+                        (false, true) => std::cmp::Ordering::Greater,
+                        (false, false) => match (a1 >= 1, a2 >= 1) {
+                            (true, true) => s1.cmp(&s2),
+                            (true, false) => std::cmp::Ordering::Less,
+                            (false, true) => std::cmp::Ordering::Greater,
+                            (false, false) => i2.cmp(&i1),
+                        },
+                    }
+                });
+
+                // Update indexed_splits with the new order
+                indexed_splits = indexed_splits_with_amounts
+                    .into_iter()
+                    .map(|(i, s, _)| (i, s))
+                    .collect();
+
+                for &(index, _) in &indexed_splits {
+                    if balance < 0 && sat_amounts[index] > 0 {
+                        sat_amounts[index] -= 1;
+                        balance += 1;
+                    }
+                    if balance == 0 {
+                        break;
+                    }
+                }
+            }
+        }
+        Ordering::Equal => {}
+        Ordering::Greater => {
+            // Sort by decreasing splits for positive balance
+            indexed_splits.sort_by_key(|&(_, split)| std::cmp::Reverse(split));
+
+            // Single iteration: add sats to recipients
+            for &(index, _) in &indexed_splits {
+                if balance > 0 {
+                    sat_amounts[index] += 1;
+                    balance -= 1;
+                } else {
+                    break;
+                }
             }
         }
     }
