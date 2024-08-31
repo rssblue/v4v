@@ -20,168 +20,173 @@ macro_rules! compute_sat_recipients_tests {
 
 compute_sat_recipients_tests! {
     case_1: TestCase {
+        splits: vec![100],
+        total_sats: 100,
+        expected_sats: vec![100],
+    },
+    case_2: TestCase {
         splits: vec![50, 50],
         total_sats: 1000,
         expected_sats: vec![500, 500],
     },
-    case_2: TestCase {
+    case_3: TestCase {
         splits: vec![50, 50],
         total_sats: 1,
         expected_sats: vec![1, 0],
     },
-    case_3: TestCase {
+    case_4: TestCase {
         // Some hosts/programs (like the Split Kit) might generate 0-valued splits, especially for live wallet switching.
         splits: vec![0, 0],
         total_sats: 1,
         expected_sats: vec![1, 0],
     },
-    case_4: TestCase {
+    case_5: TestCase {
         splits: vec![50, 50, 1],
         total_sats: 1,
         expected_sats: vec![1, 0, 0],
     },
-    case_5: TestCase {
+    case_6: TestCase {
         splits: vec![50, 50, 1],
         total_sats: 100,
         expected_sats: vec![50, 49, 1],
     },
-    case_6: TestCase {
+    case_7: TestCase {
         // If not all recipients can receive sats, ones with higher splits should be prioritized.
         splits: vec![1, 50, 50],
         total_sats: 1,
         expected_sats: vec![0, 1, 0],
     },
-    case_7: TestCase {
+    case_8: TestCase {
         splits: vec![99, 1, 1],
         total_sats: 10,
         expected_sats: vec![8, 1, 1],
     },
-    case_8: TestCase {
+    case_9: TestCase {
         splits: vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
         total_sats: 10,
         expected_sats: vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     },
-    case_9: TestCase {
+    case_10: TestCase {
         splits: vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
         total_sats: 9,
         expected_sats: vec![1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
     },
-    case_10: TestCase {
+    case_11: TestCase {
         splits: vec![2, 2, 2, 2, 1, 2, 2, 2, 2, 2],
         total_sats: 9,
         expected_sats: vec![1, 1, 1, 1, 0, 1, 1, 1, 1, 1],
     },
-    case_11: TestCase {
-        splits: vec![1000000, 1000000, 1000000, 1000000, 1, 1000000, 1000000, 1000000, 1000000, 1000000],
-        total_sats: 9,
-        expected_sats: vec![1, 1, 1, 1, 0, 1, 1, 1, 1, 1],
-    },
     case_12: TestCase {
-        splits: vec![1000000, 1000000, 1000000, 1000000, 0, 1000000, 1000000, 1000000, 1000000, 1000000],
+        splits: vec![1000000, 1000000, 1000000, 1000000, 1, 1000000, 1000000, 1000000, 1000000, 1000000],
         total_sats: 9,
         expected_sats: vec![1, 1, 1, 1, 0, 1, 1, 1, 1, 1],
     },
     case_13: TestCase {
         splits: vec![1000000, 1000000, 1000000, 1000000, 0, 1000000, 1000000, 1000000, 1000000, 1000000],
+        total_sats: 9,
+        expected_sats: vec![1, 1, 1, 1, 0, 1, 1, 1, 1, 1],
+    },
+    case_14: TestCase {
+        splits: vec![1000000, 1000000, 1000000, 1000000, 0, 1000000, 1000000, 1000000, 1000000, 1000000],
         total_sats: 11,
         expected_sats: vec![2, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     },
-    case_14: TestCase {
+    case_15: TestCase {
         splits: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         total_sats: 55,
         expected_sats: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     },
-    case_15: TestCase {
+    case_16: TestCase {
         splits: vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         total_sats: 56,
         expected_sats: vec![1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     },
-    case_16: TestCase {
+    case_17: TestCase {
         splits: vec![0, 0, 0, 0, 0],
         total_sats: 6,
         expected_sats: vec![2, 1, 1, 1, 1],
     },
-    case_17: TestCase {
+    case_18: TestCase {
         splits: vec![u64::MAX],
         total_sats: 100,
         expected_sats: vec![100],
     },
-    case_18: TestCase {
+    case_19: TestCase {
         splits: vec![u64::MAX, u64::MAX],
         total_sats: 100,
         expected_sats: vec![50, 50],
     },
-    case_19: TestCase {
+    case_20: TestCase {
         splits: vec![u64::MAX, 1, u64::MAX],
         total_sats: 100,
         expected_sats: vec![50, 1, 49],
     },
-    case_20: TestCase {
+    case_21: TestCase {
         splits: vec![u64::MAX, 0, u64::MAX],
         total_sats: 100,
         expected_sats: vec![50, 1, 49],
     },
-    case_21: TestCase {
+    case_22: TestCase {
         splits: vec![],
         total_sats: 100,
         expected_sats: vec![],
     },
-    case_22: TestCase {
+    case_23: TestCase {
         splits: vec![],
         total_sats: 0,
         expected_sats: vec![],
     },
-    case_23: TestCase {
+    case_24: TestCase {
         splits: vec![1],
         total_sats: 0,
         expected_sats: vec![0],
     },
-    case_24: TestCase {
+    case_25: TestCase {
         splits: vec![u64::MAX, u64::MAX],
         total_sats: 0,
         expected_sats: vec![0, 0],
     },
-    case_25: TestCase {
+    case_26: TestCase {
         splits: vec![50, 40, 3, 2, 2, 1, 2],
         total_sats: 100,
         expected_sats: vec![50, 40, 3, 2, 2, 1, 2],
     },
-    case_26: TestCase {
+    case_27: TestCase {
         splits: vec![50, 40, 3, 2, 2, 1, 2],
         total_sats: 1000,
         expected_sats: vec![500, 400, 30, 20, 20, 10, 20],
     },
-    case_27: TestCase {
+    case_28: TestCase {
         splits: vec![50, 40, 3, 2, 2, 1, 2],
         total_sats: 10,
         expected_sats: vec![3, 2, 1, 1, 1, 1, 1],
     },
-    case_28: TestCase {
+    case_29: TestCase {
         splits: vec![50, 40, 3, 2, 2, 1, 2],
         total_sats: 101,
         expected_sats: vec![51, 40, 3, 2, 2, 1, 2],
     },
-    case_29: TestCase {
+    case_30: TestCase {
         splits: vec![50, 40, 3, 2, 2, 1, 2],
         total_sats: 99,
         expected_sats: vec![50, 40, 3, 2, 2, 1, 1],
     },
-    case_30: TestCase {
+    case_31: TestCase {
         splits: vec![0],
         total_sats: u64::MAX,
         expected_sats: vec![u64::MAX],
     },
-    case_31: TestCase {
+    case_32: TestCase {
         splits: vec![50, 40, 3, 2, 2, 0, 2],
         total_sats: 100,
         expected_sats: vec![50, 40, 3, 2, 2, 1, 2],
     },
-    case_32: TestCase {
+    case_33: TestCase {
         splits: vec![50, 50, 0, 0, 0, 0, 0],
         total_sats: 100,
         expected_sats: vec![48, 47, 1, 1, 1, 1, 1],
     },
-    case_33: TestCase {
+    case_34: TestCase {
         splits: vec![50, 50, 0, 0, 0, 0, 0],
         total_sats: 101,
         expected_sats: vec![48, 48, 1, 1, 1, 1, 1],
