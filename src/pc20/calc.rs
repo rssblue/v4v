@@ -85,10 +85,10 @@ pub fn compute_sat_recipients(splits: &[u64], total_sats: u64) -> Vec<u64> {
 
             // First iteration: Remove from those that have at least two sats.
             for &(index, split) in &indexed_splits {
-                if balance < 0 && sat_amounts[index] > 1 {
-                    // Remove amount proportional to the split.
-                    let amount_to_remove =
-                        (split * initial_balance.unsigned_abs() as u128 / total_split).max(1);
+                // Remove amount proportional to the split.
+                let amount_to_remove =
+                    (split * initial_balance.unsigned_abs() as u128 / total_split).max(1);
+                if balance < 0 && sat_amounts[index] > amount_to_remove as u64 {
                     sat_amounts[index] -= amount_to_remove as u64;
                     balance += amount_to_remove as i64;
                 }
