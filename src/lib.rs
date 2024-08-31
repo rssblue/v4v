@@ -104,7 +104,7 @@ pub mod pc20 {
     ///     }
     ///
     ///     let metadata = match v4v::pc20::forwarding::CreateInvoiceMetadata::try_from(
-    ///         alby_invoice,
+    ///         alby_invoice.metadata,
     ///         ) {
     ///             Ok(metadata) => metadata,
     ///             Err(e) => return StatusCode::OK,
